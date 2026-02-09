@@ -2,7 +2,7 @@
 Melting Soul MVP - AI Agent Soul을 ERC-1155 NFT로 거래하는 마켓플레이스
 
 ## Current Status
-Phase 1: 프로젝트 초기 세팅 시작
+Phase 2: 스마트 컨트랙트 + 프론트엔드 기초 개발 중
 
 ## What Was Tried
 - docs 6개 문서 전부 읽음 (overview, contracts, database, frontend, api, deployment)
