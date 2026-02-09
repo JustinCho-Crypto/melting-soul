@@ -140,7 +140,7 @@ contract SoulMarketplaceTest is Test {
         token.approve(address(soulSale), 5 ether);
 
         vm.prank(bob);
-        soulSale.buy(1, 5);
+        soulSale.buy(1, 5, bob);
 
         assertEq(soulNFT.balanceOf(bob, 1), 5);
     }
@@ -184,7 +184,7 @@ contract SoulMarketplaceTest is Test {
         token.approve(address(soulSale), 100 ether);
 
         vm.prank(alice);
-        soulSale.buy(1, 1);
+        soulSale.buy(1, 1, alice);
 
         // Alice (origin creator) should get 5% royalty = 5 ether
         // But alice is also the buyer, so net = -100 + 5 = -95
@@ -194,6 +194,29 @@ contract SoulMarketplaceTest is Test {
 
         // Vault gets 2.5% = 2.5 ether
         assertEq(token.balanceOf(address(vault)), 2.5 ether);
+    }
+
+    function test_buyToOtherAddress() public {
+        address charlie = address(0xC);
+
+        vm.prank(alice);
+        soulNFT.createSoul("ipfs://soul1", 100);
+
+        vm.prank(alice);
+        soulNFT.setApprovalForAll(address(soulSale), true);
+
+        vm.prank(alice);
+        soulSale.list(1, 10, 1 ether);
+
+        // Bob pays, but NFT goes to Charlie
+        vm.prank(bob);
+        token.approve(address(soulSale), 5 ether);
+
+        vm.prank(bob);
+        soulSale.buy(1, 5, charlie);
+
+        assertEq(soulNFT.balanceOf(charlie, 1), 5);
+        assertEq(soulNFT.balanceOf(bob, 1), 0);
     }
 
     // --- Vault Tests ---

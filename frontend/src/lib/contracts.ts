@@ -79,7 +79,7 @@ export const SOUL_SALE_ABI = [
     type: 'function',
   },
   {
-    inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }],
+    inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'to', type: 'address' }],
     name: 'buy',
     outputs: [],
     stateMutability: 'nonpayable',
