@@ -32,7 +32,7 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
       byGen[gen].push(soul)
     }
 
-    const nodes: Node[] = lineage.map((soul) => {
+    const nodes: Node[] = lineage.map((soul: Soul) => {
       const genSouls = byGen[soul.generation]
       const indexInGen = genSouls.indexOf(soul)
       const totalInGen = genSouls.length
@@ -64,8 +64,8 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
     })
 
     const edges: Edge[] = lineage
-      .filter((s) => s.parent_id)
-      .map((soul) => ({
+      .filter((s: Soul) => s.parent_id)
+      .map((soul: Soul) => ({
         id: `${soul.parent_id}-${soul.id}`,
         source: soul.parent_id!,
         target: soul.id,

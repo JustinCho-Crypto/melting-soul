@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { MOCK_SOULS } from '@/lib/mockData'
 import type { Soul } from '@/lib/supabase'
 
@@ -28,12 +29,32 @@ export function useLineage(tokenId: number) {
   return useQuery({
     queryKey: ['lineage', tokenId],
     queryFn: async () => {
-      // TODO: Replace with Supabase RPC (get_ancestors + get_descendants)
-      const soul = MOCK_SOULS.find((s) => s.token_id === tokenId)
+      if (!isSupabaseConfigured) {
+        const soul = MOCK_SOULS.find((s) => s.token_id === tokenId)
+        if (!soul) return []
+        const origin = findOrigin(soul, MOCK_SOULS)
+        return getDescendants(origin.id, MOCK_SOULS)
+      }
+
+      const { data: soul } = await supabase
+        .from('souls')
+        .select('id, parent_id')
+        .eq('token_id', tokenId)
+        .single()
       if (!soul) return []
 
-      const origin = findOrigin(soul, MOCK_SOULS)
-      return getDescendants(origin.id, MOCK_SOULS)
+      let originId = soul.id
+      if (soul.parent_id) {
+        const { data: ancestors } = await supabase
+          .rpc('get_ancestors', { leaf_id: soul.id })
+        if (ancestors?.length) {
+          originId = ancestors[ancestors.length - 1].id
+        }
+      }
+
+      const { data: descendants } = await supabase
+        .rpc('get_descendants', { root_id: originId })
+      return descendants ?? []
     },
     enabled: !!tokenId,
   })
