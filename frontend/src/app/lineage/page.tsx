@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import Link from 'next/link'
-import { useSouls } from '@/hooks/useSouls'
+import { useAllSouls } from '@/hooks/useSouls'
 import type { Soul } from '@/lib/supabase'
 
 interface LineageGroup {
@@ -13,7 +13,7 @@ interface LineageGroup {
 }
 
 export default function LineageIndexPage() {
-  const { data: allSouls, isLoading } = useSouls()
+  const { data: allSouls, isLoading } = useAllSouls()
 
   const lineageGroups = useMemo(() => {
     if (!allSouls) return []
