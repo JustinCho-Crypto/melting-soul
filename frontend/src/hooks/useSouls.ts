@@ -20,6 +20,23 @@ export function useSouls() {
   })
 }
 
+export function useAllSouls() {
+  return useQuery({
+    queryKey: ['souls-all'],
+    queryFn: async () => {
+      if (!isSupabaseConfigured) {
+        return MOCK_SOULS
+      }
+      const { data, error } = await supabase
+        .from('souls')
+        .select('id, token_id, name, description, image_url, conversation_style, knowledge_domain, behavior_traits, temperature, parent_id, generation, fork_note, creator_address, created_at')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data
+    },
+  })
+}
+
 export function useSoulStats() {
   return useQuery({
     queryKey: ['soul-stats'],

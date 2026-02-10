@@ -5,9 +5,11 @@ const FOOTER_LINKS = {
     { label: 'Collection', href: '/marketplace' },
     { label: 'Create (Fork)', href: '/create' },
     { label: 'My Souls', href: '/my-souls' },
+    { label: 'Swap $SOUL', href: '#' },
   ],
   Resources: [
     { label: 'Docs', href: '#' },
+    { label: 'MoltBot Guide', href: '#' },
     { label: 'API Reference', href: '#' },
     { label: 'GitHub', href: '#' },
   ],
