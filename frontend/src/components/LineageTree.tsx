@@ -15,6 +15,7 @@ import type { Soul } from '@/lib/supabase'
 
 interface Props {
   tokenId: number
+  currentSoulId?: string
   onNodeClick: (soul: Soul) => void
 }
 

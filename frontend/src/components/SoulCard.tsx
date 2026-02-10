@@ -1,6 +1,7 @@
 'use client'
 
 import type { Soul } from '@/lib/supabase'
+import { GenBadge } from '@/components/GenBadge'
 
 interface Props {
   soul: Soul
@@ -8,28 +9,6 @@ interface Props {
   onBuy?: () => void
   onFork?: () => void
   showActions?: boolean
-}
-
-function GenBadge({ generation }: { generation: number }) {
-  if (generation === 0) {
-    return (
-      <span className="rounded-full bg-astral-amber/20 px-2 py-0.5 text-[10px] font-semibold text-astral-amber">
-        Gen 0 &middot; Origin
-      </span>
-    )
-  }
-  if (generation === 1) {
-    return (
-      <span className="rounded-full bg-ethereal-blue/20 px-2 py-0.5 text-[10px] font-semibold text-ethereal-blue">
-        Gen {generation}
-      </span>
-    )
-  }
-  return (
-    <span className="rounded-full bg-plasma-pink/20 px-2 py-0.5 text-[10px] font-semibold text-plasma-pink">
-      Gen {generation}
-    </span>
-  )
 }
 
 export function SoulCard({ soul, onClick, onBuy, onFork, showActions = true }: Props) {
