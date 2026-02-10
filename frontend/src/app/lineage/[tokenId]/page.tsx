@@ -27,10 +27,12 @@ export default function LineagePage() {
         </p>
       </div>
 
-      <LineageTree
-        tokenId={tokenId}
-        onNodeClick={(soul) => setSelectedSoul(soul)}
-      />
+      <div className="h-[600px]">
+        <LineageTree
+          tokenId={tokenId}
+          onNodeClick={(soul) => setSelectedSoul(soul)}
+        />
+      </div>
 
       {selectedSoul && (
         <SoulModal
