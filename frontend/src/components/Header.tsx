@@ -6,6 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 const NAV_ITEMS = [
   { href: '/marketplace', label: 'Collection' },
+  { href: '/lineage', label: 'Lineage' },
   { href: '/my-souls', label: 'My Souls' },
   { href: '/create', label: 'Create' },
 ]
@@ -26,7 +27,7 @@ export function Header() {
             key={href}
             href={href}
             className={
-              pathname === href
+              pathname === href || pathname.startsWith(href + '/')
                 ? 'text-soul-purple font-medium'
                 : 'text-astral-gray transition-colors hover:text-ghost-white'
             }
