@@ -14,9 +14,10 @@ export function Header() {
   const pathname = usePathname()
 
   return (
-    <header className="flex items-center justify-between p-4 border-b border-white/10 bg-black/50 backdrop-blur-sm">
-      <Link href="/" className="text-xl font-bold text-white">
-        Melting Soul
+    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-astral-border bg-void-black/80 px-6 py-3 backdrop-blur-md">
+      <Link href="/" className="flex items-center gap-2 text-lg font-bold text-ghost-white">
+        <span className="text-xl">🔮</span>
+        Soul Marketplace
       </Link>
 
       <nav className="flex items-center gap-6">
@@ -26,8 +27,8 @@ export function Header() {
             href={href}
             className={
               pathname === href
-                ? 'text-white font-medium'
-                : 'text-white/50 hover:text-white transition-colors'
+                ? 'text-soul-purple font-medium'
+                : 'text-astral-gray transition-colors hover:text-ghost-white'
             }
           >
             {label}

@@ -17,12 +17,12 @@ export default function LineagePage() {
   const [forkTarget, setForkTarget] = useState<Soul | null>(null)
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl px-6 py-8">
       <div className="flex flex-col gap-2 pb-6">
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-3xl font-bold text-ghost-white">
           {soul?.name ?? 'Soul'} Lineage
         </h1>
-        <p className="text-white/50">
+        <p className="text-astral-gray">
           Explore the fork tree. Click a node to view details.
         </p>
       </div>

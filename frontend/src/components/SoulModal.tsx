@@ -12,6 +12,28 @@ interface Props {
   onFork: () => void
 }
 
+function GenBadge({ generation }: { generation: number }) {
+  if (generation === 0) {
+    return (
+      <span className="rounded-full bg-astral-amber/20 px-2.5 py-1 text-xs font-semibold text-astral-amber">
+        Origin
+      </span>
+    )
+  }
+  if (generation === 1) {
+    return (
+      <span className="rounded-full bg-ethereal-blue/20 px-2.5 py-1 text-xs font-semibold text-ethereal-blue">
+        Gen {generation}
+      </span>
+    )
+  }
+  return (
+    <span className="rounded-full bg-plasma-pink/20 px-2.5 py-1 text-xs font-semibold text-plasma-pink">
+      Gen {generation}
+    </span>
+  )
+}
+
 export function SoulModal({ soul, onClose, onFork }: Props) {
   const { address } = useAccount()
   const { buy, isLoading } = useBuySoul()
@@ -24,59 +46,65 @@ export function SoulModal({ soul, onClose, onFork }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-void-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="relative mx-4 w-full max-w-md rounded-2xl border border-white/10 bg-zinc-900 p-6"
+        className="relative mx-4 w-full max-w-md rounded-2xl border border-astral-border bg-dark-nebula p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-white/50 transition-colors hover:text-white"
+          className="absolute right-4 top-4 text-nebula-gray transition-colors hover:text-ghost-white"
         >
           ✕
         </button>
 
-        <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-xl bg-white/5 text-6xl">
+        <div className="soul-glow mx-auto flex h-28 w-28 items-center justify-center rounded-xl bg-cosmic-dark text-6xl">
           🔮
         </div>
 
-        <h2 className="mt-4 text-center text-xl font-bold text-white">{soul.name}</h2>
-        <p className="mt-2 text-center text-sm text-white/50">{soul.description}</p>
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <h2 className="text-xl font-bold text-ghost-white">{soul.name}</h2>
+          <GenBadge generation={soul.generation} />
+          <p className="mt-1 text-center text-sm text-astral-gray">{soul.description}</p>
+        </div>
 
-        <div className="mt-4 flex flex-col gap-2 rounded-lg bg-white/5 p-4 text-sm">
+        <div className="mt-5 flex flex-col gap-2.5 rounded-xl bg-void-surface p-4 text-sm">
           <div className="flex justify-between">
-            <span className="text-white/50">Style</span>
-            <span className="text-white">{soul.conversation_style}</span>
+            <span className="text-nebula-gray">Style</span>
+            <span className="text-ghost-white">{soul.conversation_style}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-white/50">Domain</span>
-            <span className="text-white">{soul.knowledge_domain?.join(', ')}</span>
+            <span className="text-nebula-gray">Domain</span>
+            <span className="text-ghost-white">{soul.knowledge_domain?.join(', ')}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-white/50">Generation</span>
-            <span className="text-white">{soul.generation} {soul.generation === 0 ? '(Origin)' : ''}</span>
+            <span className="text-nebula-gray">Generation</span>
+            <span className="text-ghost-white">{soul.generation} {soul.generation === 0 ? '(Origin)' : ''}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-white/50">Creator</span>
-            <span className="text-white">{shortenAddress(soul.creator_address)}</span>
+            <span className="text-nebula-gray">Creator</span>
+            <span className="font-mono text-xs text-ghost-white">{shortenAddress(soul.creator_address)}</span>
           </div>
         </div>
 
         {listing && (
-          <div className="mt-4 rounded-lg border border-white/10 p-4">
+          <div className="mt-4 rounded-xl border border-astral-border bg-void-surface p-4">
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-bold text-white">{formatPrice(listing.price)} TOKEN</span>
-              <span className="text-sm text-white/40">{listing.remaining_amount} remaining</span>
+              <span className="text-lg font-bold text-soul-purple">{formatPrice(listing.price)} MON</span>
+              <span className="text-sm text-nebula-gray">{listing.remaining_amount} left</span>
             </div>
           </div>
         )}
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-5 flex gap-3">
           {listing && (
             <button
               onClick={handleBuy}
               disabled={isLoading || !address}
-              className="flex-1 rounded-lg bg-white py-3 font-semibold text-black transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="flex-1 rounded-lg gradient-button py-3 font-semibold text-ghost-white shadow-[0_4px_14px_rgba(168,85,247,0.4)] transition-all hover:shadow-[0_4px_20px_rgba(168,85,247,0.6)] active:scale-[0.98] disabled:opacity-50"
             >
               {isLoading ? 'Processing...' : 'Buy'}
             </button>
@@ -84,7 +112,7 @@ export function SoulModal({ soul, onClose, onFork }: Props) {
           <button
             onClick={onFork}
             disabled={!address}
-            className="flex-1 rounded-lg border border-white/20 py-3 font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-soul-purple py-3 font-semibold text-soul-purple transition-all hover:bg-soul-purple/10 active:scale-[0.98] disabled:opacity-50"
           >
             Fork
           </button>

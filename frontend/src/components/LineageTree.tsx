@@ -18,13 +18,49 @@ interface Props {
   onNodeClick: (soul: Soul) => void
 }
 
+function getNodeStyle(generation: number) {
+  if (generation === 0) {
+    return {
+      background: '#16141F',
+      border: '2px solid #F59E0B',
+      borderRadius: '12px',
+      color: '#F8FAFC',
+      width: 180,
+      boxShadow: '0 0 15px rgba(245, 158, 11, 0.3)',
+    }
+  }
+  if (generation === 1) {
+    return {
+      background: '#16141F',
+      border: '2px solid #A855F7',
+      borderRadius: '12px',
+      color: '#F8FAFC',
+      width: 180,
+      boxShadow: '0 0 15px rgba(168, 85, 247, 0.3)',
+    }
+  }
+  return {
+    background: '#16141F',
+    border: '2px solid #EC4899',
+    borderRadius: '12px',
+    color: '#F8FAFC',
+    width: 180,
+    boxShadow: '0 0 15px rgba(236, 72, 153, 0.3)',
+  }
+}
+
+function getGenBadgeColor(generation: number) {
+  if (generation === 0) return '#F59E0B'
+  if (generation === 1) return '#A855F7'
+  return '#EC4899'
+}
+
 export function LineageTree({ tokenId, onNodeClick }: Props) {
   const { data: lineage, isLoading } = useLineage(tokenId)
 
   const { nodes, edges } = useMemo(() => {
     if (!lineage || lineage.length === 0) return { nodes: [], edges: [] }
 
-    // Group by generation for layout
     const byGen: Record<number, Soul[]> = {}
     for (const soul of lineage) {
       const gen = soul.generation
@@ -36,6 +72,7 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
       const genSouls = byGen[soul.generation]
       const indexInGen = genSouls.indexOf(soul)
       const totalInGen = genSouls.length
+      const badgeColor = getGenBadgeColor(soul.generation)
 
       return {
         id: soul.id,
@@ -48,18 +85,17 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
             <div className="flex flex-col items-center gap-1 px-2 py-1">
               <span className="text-lg">🔮</span>
               <span className="text-xs font-semibold">{soul.name}</span>
-              <span className="text-[10px] opacity-60">Gen {soul.generation}</span>
+              <span
+                className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                style={{ backgroundColor: `${badgeColor}33`, color: badgeColor }}
+              >
+                Gen {soul.generation}{soul.generation === 0 ? ' · Origin' : ''}
+              </span>
             </div>
           ),
           soul,
         },
-        style: {
-          background: soul.generation === 0 ? '#1a1a2e' : '#16213e',
-          border: '1px solid rgba(255,255,255,0.15)',
-          borderRadius: '12px',
-          color: '#fff',
-          width: 180,
-        },
+        style: getNodeStyle(soul.generation),
       }
     })
 
@@ -69,7 +105,7 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
         id: `${soul.parent_id}-${soul.id}`,
         source: soul.parent_id!,
         target: soul.id,
-        style: { stroke: 'rgba(255,255,255,0.2)' },
+        style: { stroke: '#A855F7', strokeWidth: 2 },
         animated: true,
       }))
 
@@ -85,7 +121,7 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
 
   if (isLoading) {
     return (
-      <div className="flex h-[600px] items-center justify-center text-white/50">
+      <div className="flex h-[600px] items-center justify-center text-astral-gray">
         Loading lineage tree...
       </div>
     )
@@ -93,14 +129,14 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
 
   if (!lineage || lineage.length === 0) {
     return (
-      <div className="flex h-[600px] items-center justify-center text-white/50">
+      <div className="flex h-[600px] items-center justify-center text-astral-gray">
         No lineage data found
       </div>
     )
   }
 
   return (
-    <div className="h-[600px] w-full rounded-xl border border-white/10">
+    <div className="h-[600px] w-full rounded-xl border border-astral-border bg-dark-nebula">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -108,8 +144,8 @@ export function LineageTree({ tokenId, onNodeClick }: Props) {
         fitView
         proOptions={{ hideAttribution: true }}
       >
-        <Controls className="!bg-zinc-800 !border-white/10 [&>button]:!bg-zinc-800 [&>button]:!border-white/10 [&>button]:!text-white" />
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(255,255,255,0.05)" />
+        <Controls className="!bg-void-surface !border-astral-border [&>button]:!bg-void-surface [&>button]:!border-astral-border [&>button]:!text-ghost-white" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(168, 85, 247, 0.05)" />
       </ReactFlow>
     </div>
   )
