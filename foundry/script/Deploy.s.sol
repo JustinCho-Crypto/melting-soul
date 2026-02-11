@@ -5,6 +5,8 @@ import "forge-std/Script.sol";
 import "../src/SoulNFT.sol";
 import "../src/SoulSale.sol";
 import "../src/Vault.sol";
+import "../src/AgentRegistry.sol";
+import "../src/X402Facilitator.sol";
 
 contract DeployScript is Script {
     function run() external {
@@ -13,13 +15,28 @@ contract DeployScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
+        // Core contracts
         SoulNFT soulNFT = new SoulNFT();
         Vault vault = new Vault(paymentToken);
         SoulSale soulSale = new SoulSale(address(soulNFT), paymentToken, address(vault));
 
+        // ERC-8004 Agent Registry
+        AgentRegistry agentRegistry = new AgentRegistry();
+
+        // x402 Facilitator
+        X402Facilitator facilitator = new X402Facilitator();
+
+        // Link facilitator to SoulSale
+        soulSale.setFacilitator(address(facilitator));
+
+        console.log("=== Core Contracts ===");
         console.log("SoulNFT:", address(soulNFT));
         console.log("Vault:", address(vault));
         console.log("SoulSale:", address(soulSale));
+
+        console.log("=== Agent & x402 ===");
+        console.log("AgentRegistry:", address(agentRegistry));
+        console.log("X402Facilitator:", address(facilitator));
 
         vm.stopBroadcast();
     }
