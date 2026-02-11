@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPublicClient, createWalletClient, http, recoverTypedDataAddress } from 'viem'
+import { createPublicClient, createWalletClient, http, recoverTypedDataAddress, defineChain } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { PaymentPayload, PAYMENT_TYPES, EIP712_DOMAIN, SettlementResult } from '@/lib/x402/types'
+import { PAYMENT_TYPES, EIP712_DOMAIN, SettlementResult } from '@/lib/x402/types'
 
 // Contract addresses from env
 const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS as `0x${string}`
@@ -152,8 +152,15 @@ export async function POST(request: NextRequest) {
 
       // Create wallet client for writing
       const account = privateKeyToAccount(OPERATOR_KEY)
+      const chain = defineChain({
+        id: CHAIN_ID,
+        name: 'Custom',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: [RPC_URL] } },
+      })
       const walletClient = createWalletClient({
         account,
+        chain,
         transport: http(RPC_URL),
       })
 

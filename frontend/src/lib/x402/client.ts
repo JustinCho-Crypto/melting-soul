@@ -69,7 +69,7 @@ export class X402Client {
     }
 
     const signature = await signTypedData({
-      privateKey: (this.account as any).privateKey,
+      privateKey: (this.account as Account & { privateKey: `0x${string}` }).privateKey,
       domain,
       types: PAYMENT_TYPES,
       primaryType: 'PaymentPayload',

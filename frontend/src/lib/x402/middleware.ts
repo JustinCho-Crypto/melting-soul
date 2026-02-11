@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PaymentRequirements, X402Response } from './types'
+import { PaymentRequirements } from './types'
 
 // Contract addresses
 const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS as `0x${string}`
@@ -175,7 +175,7 @@ export async function enforceX402(
 
     // Payment settled successfully - continue with purchase
     return null
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Payment verification failed' },
       { status: 500 }
