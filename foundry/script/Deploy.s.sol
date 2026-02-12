@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
+import "../src/MockERC20.sol";
 import "../src/SoulNFT.sol";
 import "../src/SoulSale.sol";
 import "../src/Vault.sol";
@@ -11,9 +12,19 @@ import "../src/X402Facilitator.sol";
 contract DeployScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address paymentToken = vm.envAddress("PAYMENT_TOKEN_ADDRESS");
+
+        // Use existing payment token if provided, otherwise deploy MockERC20
+        address paymentToken = vm.envOr("PAYMENT_TOKEN_ADDRESS", address(0));
 
         vm.startBroadcast(deployerPrivateKey);
+
+        // Deploy MockERC20 if no payment token provided
+        if (paymentToken == address(0)) {
+            MockERC20 mockToken = new MockERC20();
+            paymentToken = address(mockToken);
+            console.log("=== Payment Token (MockERC20) ===");
+            console.log("MockERC20:", paymentToken);
+        }
 
         // Core contracts
         SoulNFT soulNFT = new SoulNFT();
