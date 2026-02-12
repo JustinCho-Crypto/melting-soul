@@ -8,7 +8,7 @@ import { useSouls } from '@/hooks/useSouls'
 import { SoulCard } from '@/components/SoulCard'
 import { SoulModal } from '@/components/SoulModal'
 import { ForkModal } from '@/components/ForkModal'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 export default function MySoulsPage() {
   const { address, isConnected } = useAccount()

@@ -6,7 +6,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useSouls } from '@/hooks/useSouls'
 import { useForkSoul } from '@/hooks/useContracts'
 import { MODIFIERS, MODIFIER_CATEGORIES, TRAITS, getModifiersByCategory } from '@/lib/modifiers'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 export default function CreatePage() {
   const { address, isConnected } = useAccount()

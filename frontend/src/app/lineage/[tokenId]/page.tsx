@@ -6,7 +6,7 @@ import { LineageTree } from '@/components/LineageTree'
 import { SoulModal } from '@/components/SoulModal'
 import { ForkModal } from '@/components/ForkModal'
 import { useSoul } from '@/hooks/useSoul'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 export default function LineagePage() {
   const params = useParams()
