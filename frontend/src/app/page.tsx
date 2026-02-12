@@ -97,7 +97,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="font-semibold text-ghost-white">{soul.name}</h3>
                 <div className="flex flex-wrap gap-1.5">
-                  {soul.knowledge_domain.map((d) => (
+                  {soul.knowledge_domain.map((d: string) => (
                     <span key={d} className="rounded-md bg-cosmic-dark px-2 py-0.5 text-[11px] text-nebula-gray">#{d}</span>
                   ))}
                 </div>
