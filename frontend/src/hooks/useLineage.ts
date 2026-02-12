@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/config'
 import { MOCK_SOULS } from '@/lib/mockData'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 function findOrigin(soul: Soul, allSouls: Soul[]): Soul {
   if (!soul.parent_id) return soul
@@ -36,6 +36,8 @@ export function useLineage(tokenId: number) {
         return getDescendants(origin.id, MOCK_SOULS)
       }
 
+      const { getSupabase } = await import('@/lib/supabase')
+      const supabase = getSupabase()
       const { data: soul } = await supabase
         .from('souls')
         .select('id, parent_id')

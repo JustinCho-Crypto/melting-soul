@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/config'
 import { MOCK_SOULS } from '@/lib/mockData'
 
 export function useSoul(tokenId: number) {
@@ -9,7 +9,8 @@ export function useSoul(tokenId: number) {
       if (!isSupabaseConfigured) {
         return MOCK_SOULS.find((s) => s.token_id === tokenId) ?? null
       }
-      const { data, error } = await supabase
+      const { getSupabase } = await import('@/lib/supabase')
+      const { data, error } = await getSupabase()
         .from('souls')
         .select('*')
         .eq('token_id', tokenId)
