@@ -7,6 +7,25 @@ export const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS a
 
 export const SOUL_NFT_ABI = [
   {
+    type: 'event',
+    name: 'SoulCreated',
+    inputs: [
+      { name: 'tokenId', type: 'uint256', indexed: true },
+      { name: 'creator', type: 'address', indexed: true },
+      { name: 'parentId', type: 'uint256', indexed: false },
+      { name: 'generation', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'SoulForked',
+    inputs: [
+      { name: 'newTokenId', type: 'uint256', indexed: true },
+      { name: 'parentTokenId', type: 'uint256', indexed: true },
+      { name: 'forker', type: 'address', indexed: true },
+    ],
+  },
+  {
     inputs: [{ name: 'metadataUri', type: 'string' }, { name: 'initialSupply', type: 'uint256' }],
     name: 'createSoul',
     outputs: [{ name: 'tokenId', type: 'uint256' }],

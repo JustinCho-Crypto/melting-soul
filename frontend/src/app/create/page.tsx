@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useSouls } from '@/hooks/useSouls'
 import { useForkSoul } from '@/hooks/useContracts'
+import { syncSoulFromReceipt } from '@/lib/syncSupabase'
 import { MODIFIERS, MODIFIER_CATEGORIES, TRAITS, getModifiersByCategory } from '@/lib/modifiers'
 import type { Soul } from '@/lib/types'
 
 export default function CreatePage() {
   const { address, isConnected } = useAccount()
   const { data: allSouls } = useSouls()
-  const { fork, isLoading } = useForkSoul()
+  const { fork, isLoading, receipt } = useForkSoul()
 
   // Soul selection
   const [selectedSoul, setSelectedSoul] = useState<Soul | null>(null)
@@ -26,6 +27,26 @@ export default function CreatePage() {
   const [customPrompt, setCustomPrompt] = useState('')
   const [forkName, setForkName] = useState('')
   const [forkPrice, setForkPrice] = useState(25)
+  const synced = useRef(false)
+
+  useEffect(() => {
+    if (receipt?.status === 'success' && !synced.current && address && selectedSoul) {
+      synced.current = true
+      const traitStrings = Object.entries(traits).map(([k, v]) => `${k}:${v}`)
+      syncSoulFromReceipt(receipt.logs, {
+        name: forkName,
+        description: customPrompt || `Fork of ${selectedSoul.name}`,
+        image_url: selectedSoul.image_url,
+        conversation_style: selectedSoul.conversation_style,
+        knowledge_domain: selectedSoul.knowledge_domain,
+        behavior_traits: traitStrings,
+        temperature,
+        parent_id: selectedSoul.id,
+        fork_note: selectedModifiers.map(id => MODIFIERS.find(m => m.id === id)?.label).filter(Boolean).join(', ') || undefined,
+        additional_prompt: customPrompt || undefined,
+      }, address)
+    }
+  }, [receipt, address, selectedSoul, forkName, customPrompt, traits, temperature, selectedModifiers])
 
   const popularSouls = useMemo(() => {
     return allSouls?.filter((s) => s.generation === 0).slice(0, 4) ?? []
@@ -45,6 +66,7 @@ export default function CreatePage() {
 
   const handleFork = async () => {
     if (!selectedSoul || !forkName || !address) return
+    synced.current = false
     const metadataUri = `ipfs://fork-${selectedSoul.token_id}-${Date.now()}`
     await fork(selectedSoul.token_id, metadataUri, 10)
   }
