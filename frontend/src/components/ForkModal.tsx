@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useForkSoul } from '@/hooks/useContracts'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 interface Props {
   parentSoul: Soul

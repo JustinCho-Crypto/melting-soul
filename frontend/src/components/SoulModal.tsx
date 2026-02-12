@@ -9,7 +9,7 @@ import { GenBadge } from '@/components/GenBadge'
 import { PersonalityTraits } from '@/components/PersonalityTraits'
 import { LineageTree } from '@/components/LineageTree'
 import { MOCK_SOUL_STATS, MOCK_ACTIVITY } from '@/lib/mockData'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 interface Props {
   soul: Soul
