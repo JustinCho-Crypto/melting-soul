@@ -25,6 +25,7 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
     IERC1155 public soulNFT;
     IERC20 public paymentToken;
     address public vault;
+    address public facilitator;
 
     uint256 public platformFeeBps = 250;
     uint256 public originRoyaltyBps = 500;
@@ -44,11 +45,28 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
     event Listed(uint256 indexed listingId, address indexed seller, uint256 indexed tokenId, uint256 amount, uint256 pricePerUnit);
     event Sold(uint256 indexed listingId, address indexed buyer, address indexed recipient, uint256 amount, uint256 totalPrice);
     event ListingCancelled(uint256 indexed listingId);
+    event FacilitatorUpdated(address indexed oldFacilitator, address indexed newFacilitator);
+    event SoldViaX402(uint256 indexed listingId, address indexed buyer, address indexed recipient, uint256 amount, bytes32 paymentHash);
 
     constructor(address _soulNFT, address _paymentToken, address _vault) Ownable(msg.sender) {
         soulNFT = IERC1155(_soulNFT);
         paymentToken = IERC20(_paymentToken);
         vault = _vault;
+    }
+
+    modifier onlyFacilitator() {
+        require(msg.sender == facilitator, "Not facilitator");
+        _;
+    }
+
+    /**
+     * @notice Set the x402 facilitator address
+     * @param _facilitator Address of the X402Facilitator contract
+     */
+    function setFacilitator(address _facilitator) external onlyOwner {
+        address oldFacilitator = facilitator;
+        facilitator = _facilitator;
+        emit FacilitatorUpdated(oldFacilitator, _facilitator);
     }
 
     function list(uint256 tokenId, uint256 amount, uint256 pricePerUnit) external returns (uint256 listingId) {
@@ -147,6 +165,41 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         soulNFT.safeTransferFrom(address(this), msg.sender, listing.tokenId, listing.amount, "");
 
         emit ListingCancelled(listingId);
+    }
+
+    /**
+     * @notice Purchase via x402 protocol - called by facilitator after payment settlement
+     * @dev Payment has already been transferred by the facilitator contract
+     * @param listingId The listing to purchase from
+     * @param amount Number of tokens to purchase
+     * @param buyer The agent/buyer who paid (for event logging)
+     * @param recipient Address to receive the Soul NFT
+     * @param paymentHash The settlement hash from X402Facilitator
+     */
+    function buyViaX402(
+        uint256 listingId,
+        uint256 amount,
+        address buyer,
+        address recipient,
+        bytes32 paymentHash
+    ) external onlyFacilitator nonReentrant {
+        require(recipient != address(0), "Invalid recipient");
+        Listing storage listing = listings[listingId];
+        require(listing.active && amount > 0 && amount <= listing.amount, "Invalid listing");
+
+        uint256 totalPrice = listing.pricePerUnit * amount;
+
+        // Payment already transferred to this contract by facilitator
+        // Distribute to seller and royalty recipients
+        _distributePayment(listing.tokenId, listing.seller, totalPrice);
+
+        // Transfer Soul NFT to recipient
+        soulNFT.safeTransferFrom(address(this), recipient, listing.tokenId, amount, "");
+
+        listing.amount -= amount;
+        if (listing.amount == 0) listing.active = false;
+
+        emit SoldViaX402(listingId, buyer, recipient, amount, paymentHash);
     }
 
     function setFees(uint256 _platform, uint256 _origin, uint256 _parent) external onlyOwner {
