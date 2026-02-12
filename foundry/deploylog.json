@@ -1,0 +1,61 @@
+{
+  "network": {
+    "name": "Monad Testnet",
+    "chainId": 10143,
+    "rpcUrl": "https://testnet-rpc.monad.xyz"
+  },
+  "deployer": "0xbbeC4D0864B75AD30434461FB0D7122d7Db4f8a3",
+  "deployedAt": "2026-02-12",
+  "solcVersion": "0.8.28",
+  "contracts": {
+    "MockERC20": {
+      "address": "0x500DA8EfAB19D1092aE086c33382E8327e55D12C",
+      "name": "Soul Token",
+      "symbol": "SOUL",
+      "decimals": 18,
+      "description": "ERC20 payment token with ERC20Permit support. Initial supply: 1,000,000 SOUL minted to deployer."
+    },
+    "SoulNFT": {
+      "address": "0xf0b65004f304AC4B131480E6a3AF03456BbFE385",
+      "standard": "ERC1155",
+      "description": "Soul NFT contract supporting create, fork, and lineage tracking."
+    },
+    "Vault": {
+      "address": "0x6313b2e0A4C90203C0a8e540B804462EE6320B71",
+      "paymentToken": "0x500DA8EfAB19D1092aE086c33382E8327e55D12C",
+      "description": "Platform fee vault. Holds collected platform fees in SOUL token."
+    },
+    "SoulSale": {
+      "address": "0xE43A1C274497a6A6A95582c44F7e47DfeD0E27A4",
+      "soulNFT": "0xf0b65004f304AC4B131480E6a3AF03456BbFE385",
+      "paymentToken": "0x500DA8EfAB19D1092aE086c33382E8327e55D12C",
+      "vault": "0x6313b2e0A4C90203C0a8e540B804462EE6320B71",
+      "facilitator": "0xDf73b79af6406Ba86F1733294fE8586c3d33A37C",
+      "fees": {
+        "platformFeeBps": 250,
+        "originRoyaltyBps": 500,
+        "parentRoyaltyBps": 300
+      },
+      "description": "Marketplace contract for listing/buying Soul NFTs with royalty distribution and x402 support."
+    },
+    "AgentRegistry": {
+      "address": "0x54546189aD19B100ac8c6b834DBDc4e3Aa29971F",
+      "standard": "ERC721 (ERC-8004)",
+      "name": "Soul Marketplace Agent",
+      "symbol": "AGENT",
+      "description": "ERC-8004 compliant Identity Registry for AI Agents. Supports registration, wallet binding, and metadata management."
+    },
+    "X402Facilitator": {
+      "address": "0xDf73b79af6406Ba86F1733294fE8586c3d33A37C",
+      "eip712Domain": "SoulMarketplace v1",
+      "description": "x402 protocol facilitator for EIP-712 signed payment settlement. Linked to SoulSale as authorized facilitator."
+    }
+  },
+  "postDeployActions": [
+    "SoulSale.setFacilitator(0xDf73b79af6406Ba86F1733294fE8586c3d33A37C)"
+  ],
+  "gasUsed": {
+    "estimatedTotal": "10605559",
+    "gasCost": "~1.08 MON"
+  }
+}
