@@ -93,8 +93,8 @@ if (!verifyData.valid) {
   process.exit(1)
 }
 
-// Step 5: Settle
-console.log('\n=== Settle ===')
+// Step 5: Settle + Buy (atomic)
+console.log('\n=== Settle & Buy ===')
 const settleRes = await fetch(API_URL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -107,6 +107,8 @@ const settleRes = await fetch(API_URL, {
       deadline: payload.deadline.toString(),
     },
     signature,
+    purchaseAmount: '1',
+    recipient: account.address,
   }),
 })
 const settleData = await settleRes.json()
