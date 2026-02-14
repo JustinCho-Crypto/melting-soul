@@ -2,8 +2,13 @@ export const SOUL_NFT_ADDRESS = process.env.NEXT_PUBLIC_SOUL_NFT_ADDRESS as `0x$
 export const SOUL_SALE_ADDRESS = process.env.NEXT_PUBLIC_SOUL_SALE_ADDRESS as `0x${string}` | undefined
 export const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined
 export const PAYMENT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS as `0x${string}` | undefined
+export const AUSD_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_AUSD_TOKEN_ADDRESS || '0x00000000efe302beaa2b3e6e1b18d08d69a9012a') as `0x${string}`
+export const DISCOUNT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_DISCOUNT_TOKEN_ADDRESS as `0x${string}` | undefined
 export const AGENT_REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS as `0x${string}` | undefined
 export const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS as `0x${string}` | undefined
+
+// Discount rate: 20% off when paying with project token (MST)
+export const DISCOUNT_BPS = Number(process.env.NEXT_PUBLIC_DISCOUNT_BPS || '2000')
 
 export const SOUL_NFT_ABI = [
   {
@@ -107,6 +112,20 @@ export const SOUL_SALE_ABI = [
     type: 'function',
   },
   {
+    inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'to', type: 'address' }],
+    name: 'buyWithAusd',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'to', type: 'address' }],
+    name: 'buyWithDiscountToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [{ name: 'listingId', type: 'uint256' }],
     name: 'cancelListing',
     outputs: [],
@@ -123,6 +142,20 @@ export const SOUL_SALE_ABI = [
       { name: 'pricePerUnit', type: 'uint256' },
       { name: 'active', type: 'bool' },
     ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'discountBps',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'price', type: 'uint256' }],
+    name: 'getDiscountedPrice',
+    outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
   },

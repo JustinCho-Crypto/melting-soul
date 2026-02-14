@@ -23,13 +23,16 @@ interface ISoulNFT {
 contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
 
     IERC1155 public soulNFT;
-    IERC20 public paymentToken;
+    IERC20 public paymentToken;       // MON (default payment token)
+    IERC20 public ausdToken;          // AUSD stablecoin (full price)
+    IERC20 public discountToken;      // Project token (discounted price)
     address public vault;
     address public facilitator;
 
     uint256 public platformFeeBps = 250;
-    uint256 public originRoyaltyBps = 500;
-    uint256 public parentRoyaltyBps = 300;
+    uint256 public originRoyaltyBps = 400;
+    uint256 public parentRoyaltyBps = 350;
+    uint256 public discountBps = 2000;    // 20% discount for project token
 
     struct Listing {
         address seller;
@@ -59,15 +62,23 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         _;
     }
 
-    /**
-     * @notice Set the x402 facilitator address
-     * @param _facilitator Address of the X402Facilitator contract
-     */
+    // ============ Admin Functions ============
+
     function setFacilitator(address _facilitator) external onlyOwner {
         address oldFacilitator = facilitator;
         facilitator = _facilitator;
         emit FacilitatorUpdated(oldFacilitator, _facilitator);
     }
+
+    function setAusdToken(address _ausdToken) external onlyOwner {
+        ausdToken = IERC20(_ausdToken);
+    }
+
+    function setDiscountToken(address _discountToken) external onlyOwner {
+        discountToken = IERC20(_discountToken);
+    }
+
+    // ============ Listing ============
 
     function list(uint256 tokenId, uint256 amount, uint256 pricePerUnit) external returns (uint256 listingId) {
         require(amount > 0 && pricePerUnit > 0, "Invalid params");
@@ -86,14 +97,39 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         emit Listed(listingId, msg.sender, tokenId, amount, pricePerUnit);
     }
 
+    // ============ Buy Functions ============
+
+    /// @notice Buy with MON (default payment token) - full price
     function buy(uint256 listingId, uint256 amount, address to) external nonReentrant {
         Listing storage listing = listings[listingId];
         require(listing.active && amount > 0 && amount <= listing.amount, "Invalid");
 
         uint256 totalPrice = listing.pricePerUnit * amount;
-        _executePurchase(listingId, amount, totalPrice, to);
+        _executePurchase(listingId, amount, totalPrice, to, paymentToken);
     }
 
+    /// @notice Buy with AUSD stablecoin - full price
+    function buyWithAusd(uint256 listingId, uint256 amount, address to) external nonReentrant {
+        require(address(ausdToken) != address(0), "AUSD not configured");
+        Listing storage listing = listings[listingId];
+        require(listing.active && amount > 0 && amount <= listing.amount, "Invalid");
+
+        uint256 totalPrice = listing.pricePerUnit * amount;
+        _executePurchase(listingId, amount, totalPrice, to, ausdToken);
+    }
+
+    /// @notice Buy with project discount token - discounted price (20% off)
+    function buyWithDiscountToken(uint256 listingId, uint256 amount, address to) external nonReentrant {
+        require(address(discountToken) != address(0), "Discount token not configured");
+        Listing storage listing = listings[listingId];
+        require(listing.active && amount > 0 && amount <= listing.amount, "Invalid");
+
+        uint256 totalPrice = listing.pricePerUnit * amount;
+        uint256 discountedPrice = totalPrice - (totalPrice * discountBps) / 10000;
+        _executePurchase(listingId, amount, discountedPrice, to, discountToken);
+    }
+
+    /// @notice Buy with permit (MON)
     function buyWithPermit(
         uint256 listingId,
         uint256 amount,
@@ -107,15 +143,23 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         uint256 totalPrice = listing.pricePerUnit * amount;
 
         IERC20Permit(address(paymentToken)).permit(msg.sender, address(this), totalPrice, deadline, v, r, s);
-        _executePurchase(listingId, amount, totalPrice, to);
+        _executePurchase(listingId, amount, totalPrice, to, paymentToken);
     }
 
-    function _executePurchase(uint256 listingId, uint256 amount, uint256 totalPrice, address to) internal {
+    // ============ Internal ============
+
+    function _executePurchase(
+        uint256 listingId,
+        uint256 amount,
+        uint256 totalPrice,
+        address to,
+        IERC20 token
+    ) internal {
         require(to != address(0), "Invalid recipient");
         Listing storage listing = listings[listingId];
 
-        paymentToken.transferFrom(msg.sender, address(this), totalPrice);
-        _distributePayment(listing.tokenId, listing.seller, totalPrice);
+        token.transferFrom(msg.sender, address(this), totalPrice);
+        _distributePayment(listing.tokenId, listing.seller, totalPrice, token);
         soulNFT.safeTransferFrom(address(this), to, listing.tokenId, amount, "");
 
         listing.amount -= amount;
@@ -124,7 +168,12 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         emit Sold(listingId, msg.sender, to, amount, totalPrice);
     }
 
-    function _distributePayment(uint256 tokenId, address seller, uint256 totalPrice) internal {
+    function _distributePayment(
+        uint256 tokenId,
+        address seller,
+        uint256 totalPrice,
+        IERC20 token
+    ) internal {
         (, uint256 parentId, uint256 generation,,,,) = ISoulNFT(address(soulNFT)).souls(tokenId);
 
         uint256 platformFee = (totalPrice * platformFeeBps) / 10000;
@@ -144,18 +193,20 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
             }
 
             originRoyalty = (totalPrice * originRoyaltyBps) / 10000;
-            paymentToken.transfer(originCreator, originRoyalty);
+            token.transfer(originCreator, originRoyalty);
 
             if (generation > 1) {
                 (address parentCreator,,,,,,) = ISoulNFT(address(soulNFT)).souls(parentId);
                 parentRoyalty = (totalPrice * parentRoyaltyBps) / 10000;
-                paymentToken.transfer(parentCreator, parentRoyalty);
+                token.transfer(parentCreator, parentRoyalty);
             }
         }
 
-        paymentToken.transfer(vault, platformFee);
-        paymentToken.transfer(seller, totalPrice - platformFee - originRoyalty - parentRoyalty);
+        token.transfer(vault, platformFee);
+        token.transfer(seller, totalPrice - platformFee - originRoyalty - parentRoyalty);
     }
+
+    // ============ Cancel ============
 
     function cancelListing(uint256 listingId) external {
         Listing storage listing = listings[listingId];
@@ -167,6 +218,8 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         emit ListingCancelled(listingId);
     }
 
+    // ============ x402 ============
+
     /**
      * @notice Purchase via x402 protocol - called by facilitator after payment settlement
      * @dev Payment has already been transferred by the facilitator contract
@@ -175,13 +228,15 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
      * @param buyer The agent/buyer who paid (for event logging)
      * @param recipient Address to receive the Soul NFT
      * @param paymentHash The settlement hash from X402Facilitator
+     * @param tokenUsed The ERC20 token used for payment
      */
     function buyViaX402(
         uint256 listingId,
         uint256 amount,
         address buyer,
         address recipient,
-        bytes32 paymentHash
+        bytes32 paymentHash,
+        address tokenUsed
     ) external onlyFacilitator nonReentrant {
         require(recipient != address(0), "Invalid recipient");
         Listing storage listing = listings[listingId];
@@ -189,9 +244,14 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
 
         uint256 totalPrice = listing.pricePerUnit * amount;
 
+        // If paying with discount token, apply discount
+        if (tokenUsed == address(discountToken) && address(discountToken) != address(0)) {
+            totalPrice = totalPrice - (totalPrice * discountBps) / 10000;
+        }
+
         // Payment already transferred to this contract by facilitator
         // Distribute to seller and royalty recipients
-        _distributePayment(listing.tokenId, listing.seller, totalPrice);
+        _distributePayment(listing.tokenId, listing.seller, totalPrice, IERC20(tokenUsed));
 
         // Transfer Soul NFT to recipient
         soulNFT.safeTransferFrom(address(this), recipient, listing.tokenId, amount, "");
@@ -202,10 +262,19 @@ contract SoulSale is ERC1155Holder, Ownable, ReentrancyGuard {
         emit SoldViaX402(listingId, buyer, recipient, amount, paymentHash);
     }
 
+    // ============ Fee Management ============
+
     function setFees(uint256 _platform, uint256 _origin, uint256 _parent) external onlyOwner {
         require(_platform + _origin + _parent <= 3000, "Too high");
         platformFeeBps = _platform;
         originRoyaltyBps = _origin;
         parentRoyaltyBps = _parent;
+    }
+
+    // ============ View ============
+
+    /// @notice Calculate discounted price for project token
+    function getDiscountedPrice(uint256 price) external view returns (uint256) {
+        return price - (price * discountBps) / 10000;
     }
 }
