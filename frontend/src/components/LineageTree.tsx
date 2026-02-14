@@ -11,7 +11,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { useLineage } from '@/hooks/useLineage'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 interface Props {
   tokenId: number

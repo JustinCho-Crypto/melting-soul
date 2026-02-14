@@ -5,7 +5,7 @@ import { useAllSouls } from '@/hooks/useSouls'
 import { SoulCard } from '@/components/SoulCard'
 import { SoulModal } from '@/components/SoulModal'
 import { ForkModal } from '@/components/ForkModal'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 type TypeFilter = 'all' | 'origin' | 'forked'
 type SortOption = 'popular' | 'recent' | 'price-low' | 'price-high'

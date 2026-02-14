@@ -5,7 +5,7 @@ import { SOUL_NFT_ABI, SOUL_SALE_ABI, ERC20_ABI, SOUL_NFT_ADDRESS, SOUL_SALE_ADD
 export function useBuySoul() {
   const { address } = useAccount()
   const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
   const buy = async (listingId: number, amount: number) => {
     if (!SOUL_SALE_ADDRESS || !address) return
@@ -17,12 +17,12 @@ export function useBuySoul() {
     })
   }
 
-  return { buy, isLoading: isPending || isConfirming, hash }
+  return { buy, isLoading: isPending || isConfirming, hash, receipt }
 }
 
 export function useCreateSoul() {
   const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
   const create = async (metadataUri: string, initialSupply: number) => {
     if (!SOUL_NFT_ADDRESS) return
@@ -34,12 +34,12 @@ export function useCreateSoul() {
     })
   }
 
-  return { create, isLoading: isPending || isConfirming, hash }
+  return { create, isLoading: isPending || isConfirming, hash, receipt }
 }
 
 export function useForkSoul() {
   const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
   const fork = async (parentTokenId: number, metadataUri: string, initialSupply: number) => {
     if (!SOUL_NFT_ADDRESS) return
@@ -51,12 +51,12 @@ export function useForkSoul() {
     })
   }
 
-  return { fork, isLoading: isPending || isConfirming, hash }
+  return { fork, isLoading: isPending || isConfirming, hash, receipt }
 }
 
 export function useApproveToken() {
   const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
   const approve = async (spender: `0x${string}`, amount: bigint) => {
     if (!PAYMENT_TOKEN_ADDRESS) return
@@ -68,12 +68,12 @@ export function useApproveToken() {
     })
   }
 
-  return { approve, isLoading: isPending || isConfirming, hash }
+  return { approve, isLoading: isPending || isConfirming, hash, receipt }
 }
 
 export function useListSoul() {
   const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { data: receipt, isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
 
   const list = async (tokenId: number, amount: number, pricePerUnit: bigint) => {
     if (!SOUL_SALE_ADDRESS) return
@@ -85,5 +85,5 @@ export function useListSoul() {
     })
   }
 
-  return { list, isLoading: isPending || isConfirming, hash }
+  return { list, isLoading: isPending || isConfirming, hash, receipt }
 }
