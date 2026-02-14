@@ -7,6 +7,16 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
+interface ISoulSale {
+    function buyViaX402(
+        uint256 listingId,
+        uint256 amount,
+        address buyer,
+        address recipient,
+        bytes32 paymentHash
+    ) external;
+}
+
 /**
  * @title X402Facilitator
  * @notice Facilitator contract for x402 protocol payments
@@ -40,6 +50,9 @@ contract X402Facilitator is EIP712, Ownable, ReentrancyGuard {
 
     // ============ State ============
 
+    // SoulSale contract for atomic settle+buy
+    ISoulSale public soulSale;
+
     // Nonce tracking: agent => nonce => used
     mapping(address => mapping(uint256 => bool)) public usedNonces;
 
@@ -64,6 +77,7 @@ contract X402Facilitator is EIP712, Ownable, ReentrancyGuard {
     );
 
     event OperatorUpdated(address indexed operator, bool authorized);
+    event SoulSaleUpdated(address indexed oldSoulSale, address indexed newSoulSale);
 
     // ============ Constructor ============
 
@@ -81,6 +95,16 @@ contract X402Facilitator is EIP712, Ownable, ReentrancyGuard {
     function setOperator(address operator, bool authorized) external onlyOwner {
         operators[operator] = authorized;
         emit OperatorUpdated(operator, authorized);
+    }
+
+    /**
+     * @notice Set the SoulSale contract address
+     * @param _soulSale Address of the SoulSale contract
+     */
+    function setSoulSale(address _soulSale) external onlyOwner {
+        address oldSoulSale = address(soulSale);
+        soulSale = ISoulSale(_soulSale);
+        emit SoulSaleUpdated(oldSoulSale, _soulSale);
     }
 
     modifier onlyOperator() {
@@ -132,6 +156,44 @@ contract X402Facilitator is EIP712, Ownable, ReentrancyGuard {
         PaymentPayload calldata payload,
         bytes calldata signature
     ) external onlyOperator nonReentrant returns (bytes32 paymentHash) {
+        return _settle(payload, signature);
+    }
+
+    /**
+     * @notice Settle payment and trigger NFT purchase in one atomic transaction
+     * @param payload The payment payload (paymentRef encodes listingId)
+     * @param signature The agent's EIP-712 signature
+     * @param purchaseAmount Number of NFT units to purchase
+     * @param recipient Address to receive the NFT (defaults to payload.from if zero)
+     * @return paymentHash Unique hash of this settlement
+     */
+    function settleAndBuy(
+        PaymentPayload calldata payload,
+        bytes calldata signature,
+        uint256 purchaseAmount,
+        address recipient
+    ) external onlyOperator nonReentrant returns (bytes32 paymentHash) {
+        require(address(soulSale) != address(0), "SoulSale not set");
+
+        paymentHash = _settle(payload, signature);
+
+        // Decode listingId from paymentRef
+        uint256 listingId = uint256(payload.paymentRef);
+
+        // Determine recipient (use buyer if not specified)
+        address actualRecipient = recipient != address(0) ? recipient : payload.from;
+
+        // Call buyViaX402 on SoulSale (this contract is the facilitator)
+        soulSale.buyViaX402(listingId, purchaseAmount, payload.from, actualRecipient, paymentHash);
+    }
+
+    /**
+     * @notice Internal settle logic - verify signature and execute transfer
+     */
+    function _settle(
+        PaymentPayload calldata payload,
+        bytes calldata signature
+    ) internal returns (bytes32 paymentHash) {
         // Validate
         require(block.timestamp <= payload.deadline, "Payment expired");
         require(!usedNonces[payload.from][payload.nonce], "Nonce already used");
