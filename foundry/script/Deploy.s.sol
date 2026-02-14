@@ -37,8 +37,9 @@ contract DeployScript is Script {
         // x402 Facilitator
         X402Facilitator facilitator = new X402Facilitator();
 
-        // Link facilitator to SoulSale
+        // Bidirectional link: facilitator <-> SoulSale
         soulSale.setFacilitator(address(facilitator));
+        facilitator.setSoulSale(address(soulSale));
 
         console.log("=== Core Contracts ===");
         console.log("SoulNFT:", address(soulNFT));
