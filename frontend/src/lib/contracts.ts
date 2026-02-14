@@ -268,6 +268,30 @@ export const X402_FACILITATOR_ABI = [
     type: 'function',
   },
   {
+    inputs: [
+      {
+        components: [
+          { name: 'from', type: 'address' },
+          { name: 'to', type: 'address' },
+          { name: 'token', type: 'address' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'paymentRef', type: 'bytes32' },
+        ],
+        name: 'payload',
+        type: 'tuple',
+      },
+      { name: 'signature', type: 'bytes' },
+      { name: 'purchaseAmount', type: 'uint256' },
+      { name: 'recipient', type: 'address' },
+    ],
+    name: 'settleAndBuy',
+    outputs: [{ name: 'paymentHash', type: 'bytes32' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [{ name: 'agent', type: 'address' }, { name: 'nonce', type: 'uint256' }],
     name: 'isNonceUsed',
     outputs: [{ name: '', type: 'bool' }],
