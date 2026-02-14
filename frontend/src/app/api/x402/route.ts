@@ -60,6 +60,30 @@ const X402_FACILITATOR_ABI = [
     type: 'function',
   },
   {
+    inputs: [
+      {
+        components: [
+          { name: 'from', type: 'address' },
+          { name: 'to', type: 'address' },
+          { name: 'token', type: 'address' },
+          { name: 'amount', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+          { name: 'paymentRef', type: 'bytes32' },
+        ],
+        name: 'payload',
+        type: 'tuple',
+      },
+      { name: 'signature', type: 'bytes' },
+      { name: 'purchaseAmount', type: 'uint256' },
+      { name: 'recipient', type: 'address' },
+    ],
+    name: 'settleAndBuy',
+    outputs: [{ name: 'paymentHash', type: 'bytes32' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
     inputs: [{ name: 'agent', type: 'address' }],
     name: 'getNonce',
     outputs: [{ name: '', type: 'uint256' }],
@@ -82,7 +106,7 @@ const X402_FACILITATOR_ABI = [
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, payload, signature } = body
+    const { action, payload, signature, purchaseAmount, recipient } = body
 
     if (!payload || !signature) {
       return NextResponse.json(
@@ -164,23 +188,24 @@ export async function POST(request: NextRequest) {
         transport: http(RPC_URL),
       })
 
-      // Call settle on facilitator contract
+      // Call settleAndBuy on facilitator contract (atomic settle + NFT transfer)
+      const payloadTuple = {
+        from: payload.from,
+        to: payload.to,
+        token: payload.token,
+        amount: BigInt(payload.amount),
+        nonce: BigInt(payload.nonce),
+        deadline: BigInt(payload.deadline),
+        paymentRef: payload.paymentRef,
+      }
+      const buyAmount = BigInt(purchaseAmount || '1')
+      const buyRecipient = (recipient || payload.from) as `0x${string}`
+
       const hash = await walletClient.writeContract({
         address: FACILITATOR_ADDRESS,
         abi: X402_FACILITATOR_ABI,
-        functionName: 'settle',
-        args: [
-          {
-            from: payload.from,
-            to: payload.to,
-            token: payload.token,
-            amount: BigInt(payload.amount),
-            nonce: BigInt(payload.nonce),
-            deadline: BigInt(payload.deadline),
-            paymentRef: payload.paymentRef,
-          },
-          signature,
-        ],
+        functionName: 'settleAndBuy',
+        args: [payloadTuple, signature, buyAmount, buyRecipient],
       })
 
       // Wait for receipt

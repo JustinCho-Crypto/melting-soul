@@ -88,9 +88,12 @@ export class X402Client {
   }
 
   /**
-   * Submit a signed payment for settlement
+   * Submit a signed payment for settlement (with atomic NFT purchase)
    */
-  async settle(signedPayment: SignedPayment): Promise<SettlementResult> {
+  async settle(
+    signedPayment: SignedPayment,
+    options?: { purchaseAmount?: string; recipient?: string }
+  ): Promise<SettlementResult> {
     const res = await fetch(`${this.baseUrl}/api/x402`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -103,6 +106,8 @@ export class X402Client {
           deadline: signedPayment.payload.deadline.toString(),
         },
         signature: signedPayment.signature,
+        purchaseAmount: options?.purchaseAmount || '1',
+        recipient: options?.recipient || signedPayment.payload.from,
       }),
     })
 
