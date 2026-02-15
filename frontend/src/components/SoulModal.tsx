@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { useBuyWithAusd, useBuyWithSoul, useApproveToken } from '@/hooks/useContracts'
+import { useBuyWithAusd, useBuyWithSoul, useApproveToken, useOnChainListing } from '@/hooks/useContracts'
 import { useSoulTokenPrice } from '@/hooks/useSoulPrice'
 import { useListingBySoul } from '@/hooks/useListings'
 import { shortenAddress, formatPrice } from '@/lib/utils'
@@ -143,23 +143,25 @@ function OverviewTab({
   const buySoul = useBuyWithSoul()
   const { approve, isLoading: isApproving } = useApproveToken()
   const soulPrice = useSoulTokenPrice()
+  // Read price from on-chain contract (source of truth)
+  const { data: onChainListing } = useOnChainListing(listing?.listing_id)
 
   const isLoading = buyAusd.isLoading || buySoul.isLoading || isApproving
 
   const getDisplayPrice = () => {
-    if (!listing) return '-'
-    const price = formatPrice(listing.price)
+    if (!onChainListing) return '-'
+    const price = formatPrice(onChainListing.pricePerUnit.toString())
     if (selectedToken === 'SOUL') {
-      const discountedWei = BigInt(listing.price) * BigInt(8000) / BigInt(10000)
+      const discountedWei = onChainListing.pricePerUnit * BigInt(8000) / BigInt(10000)
       return `${formatPrice(discountedWei.toString())} aUSD`
     }
     return `${price} aUSD`
   }
 
   const getSoulTokenAmount = () => {
-    if (!listing || !soulPrice) return null
+    if (!onChainListing || !soulPrice) return null
     // Convert wei (6 decimals) to human-readable, then apply 20% discount
-    const priceHuman = Number(listing.price) / 1e6
+    const priceHuman = Number(onChainListing.pricePerUnit) / 1e6
     const discountedAusd = priceHuman * 0.8
     const soulTokens = discountedAusd / soulPrice.priceInMon
     return soulTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })
@@ -172,11 +174,11 @@ function OverviewTab({
   }
 
   const handleBuy = async () => {
-    if (!listing || !SOUL_SALE_ADDRESS) return
+    if (!listing || !SOUL_SALE_ADDRESS || !onChainListing) return
 
     try {
-      // listing.price is already in wei from on-chain
-      const priceWei = BigInt(listing.price)
+      // Price from on-chain contract (source of truth)
+      const priceWei = onChainListing.pricePerUnit
 
       if (selectedToken === 'aUSD') {
         if (!AUSD_TOKEN_ADDRESS) return
@@ -229,7 +231,7 @@ function OverviewTab({
           { label: 'Forked', value: stats?.fork_count ?? 0 },
           { label: 'Sold', value: stats?.sale_count ?? 0 },
           { label: 'Lineage', value: `Gen ${soul.generation}` },
-          { label: 'Price', value: listing ? `${formatPrice(listing.price)} aUSD` : '-' },
+          { label: 'Price', value: onChainListing ? `${formatPrice(onChainListing.pricePerUnit.toString())} aUSD` : '-' },
         ].map((stat) => (
           <div key={stat.label} className="flex flex-col items-center gap-1 rounded-lg bg-void-surface p-3">
             <span className="text-lg font-bold text-ghost-white">{stat.value}</span>

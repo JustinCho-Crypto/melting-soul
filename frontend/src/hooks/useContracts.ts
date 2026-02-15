@@ -1,4 +1,4 @@
-import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, usePublicClient, useReadContract } from 'wagmi'
 import { useAccount } from 'wagmi'
 import { SOUL_NFT_ABI, SOUL_SALE_ABI, ERC20_ABI, SOUL_NFT_ADDRESS, SOUL_SALE_ADDRESS } from '@/lib/contracts'
 
@@ -81,6 +81,25 @@ export function useApproveToken() {
   }
 
   return { approve, isLoading: isPending, hash }
+}
+
+// Read on-chain listing data (price, amount, etc.)
+export function useOnChainListing(listingId: number | undefined) {
+  const { data, isLoading } = useReadContract({
+    address: SOUL_SALE_ADDRESS,
+    abi: SOUL_SALE_ABI,
+    functionName: 'listings',
+    args: listingId != null ? [BigInt(listingId)] : undefined,
+    query: { enabled: listingId != null && !!SOUL_SALE_ADDRESS },
+  })
+
+  if (!data) return { data: null, isLoading }
+
+  const [seller, tokenId, amount, pricePerUnit, active] = data as [string, bigint, bigint, bigint, boolean]
+  return {
+    data: { seller, tokenId, amount, pricePerUnit, active },
+    isLoading,
+  }
 }
 
 // Legacy alias for backwards compatibility
