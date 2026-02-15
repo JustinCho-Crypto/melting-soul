@@ -13,7 +13,8 @@ interface ISoulSale {
         uint256 amount,
         address buyer,
         address recipient,
-        bytes32 paymentHash
+        bytes32 paymentHash,
+        address tokenUsed
     ) external;
 }
 
@@ -184,7 +185,8 @@ contract X402Facilitator is EIP712, Ownable, ReentrancyGuard {
         address actualRecipient = recipient != address(0) ? recipient : payload.from;
 
         // Call buyViaX402 on SoulSale (this contract is the facilitator)
-        soulSale.buyViaX402(listingId, purchaseAmount, payload.from, actualRecipient, paymentHash);
+        // Pass token used so SoulSale can apply discount if applicable
+        soulSale.buyViaX402(listingId, purchaseAmount, payload.from, actualRecipient, paymentHash, payload.token);
     }
 
     /**
