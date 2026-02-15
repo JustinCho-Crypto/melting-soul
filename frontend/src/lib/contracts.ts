@@ -11,6 +11,27 @@ export const NADFUN_LENS_ADDRESS = '0x7e78A8DE94f21804F7a17F4E8BF9EC2c872187ea' 
 
 export const SOUL_NFT_ABI = [
   {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'tokenId', type: 'uint256' },
+      { indexed: true, name: 'creator', type: 'address' },
+      { indexed: false, name: 'parentId', type: 'uint256' },
+      { indexed: false, name: 'generation', type: 'uint256' },
+    ],
+    name: 'SoulCreated',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'newTokenId', type: 'uint256' },
+      { indexed: true, name: 'parentTokenId', type: 'uint256' },
+      { indexed: true, name: 'forker', type: 'address' },
+    ],
+    name: 'SoulForked',
+    type: 'event',
+  },
+  {
     inputs: [{ name: 'metadataUri', type: 'string' }, { name: 'initialSupply', type: 'uint256' }],
     name: 'createSoul',
     outputs: [{ name: 'tokenId', type: 'uint256' }],
@@ -77,6 +98,30 @@ export const SOUL_NFT_ABI = [
 ] as const
 
 export const SOUL_SALE_ABI = [
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'listingId', type: 'uint256' },
+      { indexed: true, name: 'seller', type: 'address' },
+      { indexed: true, name: 'tokenId', type: 'uint256' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'pricePerUnit', type: 'uint256' },
+    ],
+    name: 'Listed',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'listingId', type: 'uint256' },
+      { indexed: true, name: 'buyer', type: 'address' },
+      { indexed: true, name: 'recipient', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'totalPrice', type: 'uint256' },
+    ],
+    name: 'Sold',
+    type: 'event',
+  },
   {
     inputs: [{ name: 'tokenId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'pricePerUnit', type: 'uint256' }],
     name: 'list',
