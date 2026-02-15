@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: "Soul Marketplace",
-  description: "Pump.fun for AI Personalities — Buy, Fork & Evolve AI Agent Souls",
+  description: "Marketplace for AI Personalities — Buy, Fork & Evolve AI Agent Souls",
 };
 
 export default function RootLayout({

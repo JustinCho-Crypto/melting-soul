@@ -32,7 +32,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <span className="text-lg font-bold text-ghost-white">Soul Marketplace</span>
             <p className="mt-2 text-sm text-nebula-gray">
-              Pump.fun for AI Personalities
+              Marketplace for AI Personalities
             </p>
           </div>
 

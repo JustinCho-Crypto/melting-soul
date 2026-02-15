@@ -37,7 +37,7 @@ export default function LandingPage() {
           </p>
 
           <p className="text-sm font-medium text-soul-purple">
-            Pump.fun for AI Personalities
+            Marketplace for AI Personalities
           </p>
 
           <div className="mt-4 flex gap-4">
@@ -250,7 +250,7 @@ export default function LandingPage() {
       <section className="bg-dark-nebula px-6 py-20">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="mb-12 text-3xl font-bold text-ghost-white sm:text-4xl">
-            <span className="text-plasma-pink">Pump.fun</span>
+            <span className="text-plasma-pink">Marketplace</span>
             {' '}&times;{' '}
             <span className="text-spirit-cyan">Hugging Face</span>
             {' '}={' '}
@@ -259,7 +259,7 @@ export default function LandingPage() {
 
           <div className="grid gap-6 md:grid-cols-3">
             <div className="rounded-xl border border-astral-border bg-void-surface p-6">
-              <h3 className="mb-4 font-semibold text-plasma-pink">Pump.fun DNA</h3>
+              <h3 className="mb-4 font-semibold text-plasma-pink">Marketplace DNA</h3>
               <ul className="flex flex-col gap-2 text-sm text-astral-gray text-left">
                 <li>Anyone can launch</li>
                 <li>Permissionless</li>
