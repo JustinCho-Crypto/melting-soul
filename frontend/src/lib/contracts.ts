@@ -6,6 +6,9 @@ export const DISCOUNT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_DISCOUNT_TOKEN_ADD
 export const AGENT_REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS as `0x${string}` | undefined
 export const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS as `0x${string}` | undefined
 
+// NadFun Lens (Monad Mainnet) – price oracle for $SOUL token
+export const NADFUN_LENS_ADDRESS = '0x7e78A8DE94f21804F7a17F4E8BF9EC2c872187ea' as `0x${string}`
+
 export const SOUL_NFT_ABI = [
   {
     inputs: [{ name: 'metadataUri', type: 'string' }, { name: 'initialSupply', type: 'uint256' }],
@@ -288,6 +291,17 @@ export const X402_FACILITATOR_ABI = [
     inputs: [],
     name: 'getDomainSeparator',
     outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+] as const
+
+// NadFun Lens ABI – getAmountOut auto-detects bonding curve vs DEX
+export const NADFUN_LENS_ABI = [
+  {
+    inputs: [{ name: 'token', type: 'address' }, { name: 'amountIn', type: 'uint256' }, { name: 'isBuy', type: 'bool' }],
+    name: 'getAmountOut',
+    outputs: [{ name: 'router', type: 'address' }, { name: 'amountOut', type: 'uint256' }],
     stateMutability: 'view',
     type: 'function',
   },

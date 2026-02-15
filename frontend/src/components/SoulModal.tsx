@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { useBuyWithMon, useBuyWithAusd, useBuyWithSoul, useApproveToken } from '@/hooks/useContracts'
+import { useBuyWithAusd, useBuyWithSoul, useApproveToken } from '@/hooks/useContracts'
+import { useSoulTokenPrice } from '@/hooks/useSoulPrice'
 import { useListingBySoul } from '@/hooks/useListings'
 import { shortenAddress, formatPrice } from '@/lib/utils'
 import { GenBadge } from '@/components/GenBadge'
@@ -19,7 +20,7 @@ interface Props {
 }
 
 type Tab = 'overview' | 'lineage' | 'activity'
-type PaymentToken = 'MON' | 'aUSD' | 'SOUL'
+type PaymentToken = 'aUSD' | 'SOUL'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'overview', label: 'Overview' },
@@ -138,12 +139,12 @@ function OverviewTab({
 }) {
   const [selectedToken, setSelectedToken] = useState<PaymentToken>('aUSD')
 
-  const buyMon = useBuyWithMon()
   const buyAusd = useBuyWithAusd()
   const buySoul = useBuyWithSoul()
   const { approve, isLoading: isApproving } = useApproveToken()
+  const soulPrice = useSoulTokenPrice()
 
-  const isLoading = buyMon.isLoading || buyAusd.isLoading || buySoul.isLoading || isApproving
+  const isLoading = buyAusd.isLoading || buySoul.isLoading || isApproving
 
   const getDisplayPrice = () => {
     if (!listing) return '-'
@@ -155,9 +156,17 @@ function OverviewTab({
     return `${price} aUSD`
   }
 
+  const getSoulTokenAmount = () => {
+    if (!listing || !soulPrice) return null
+    const discountedAusd = Number(listing.price) * 0.8
+    // $SOUL price in MON from NadFun Lens; 1 aUSD ~ 1 USD
+    // Estimate: discountedAusd / soulPriceInMon gives rough $SOUL tokens needed
+    const soulTokens = discountedAusd / soulPrice.priceInMon
+    return soulTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })
+  }
+
   const getBuyLabel = () => {
     if (isLoading) return 'Processing...'
-    if (selectedToken === 'MON') return `Swap MON & Buy \u00b7 ${getDisplayPrice()}`
     if (selectedToken === 'SOUL') return `Buy \u00b7 ${getDisplayPrice()} (20% OFF)`
     return `Buy \u00b7 ${getDisplayPrice()}`
   }
@@ -165,9 +174,7 @@ function OverviewTab({
   const handleBuy = async () => {
     if (!listing || !SOUL_SALE_ADDRESS) return
 
-    if (selectedToken === 'MON') {
-      await buyMon.buy(listing.listing_id, 1, BigInt(listing.price))
-    } else if (selectedToken === 'aUSD') {
+    if (selectedToken === 'aUSD') {
       if (!AUSD_TOKEN_ADDRESS) return
       await approve(AUSD_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, BigInt(listing.price))
       await buyAusd.buy(listing.listing_id, 1)
@@ -246,11 +253,10 @@ function OverviewTab({
       {listing && (
         <div className="flex flex-col gap-3">
           <span className="text-sm font-medium text-nebula-gray">Pay with</span>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {([
-              { token: 'aUSD' as PaymentToken, label: 'aUSD', sub: 'Direct' },
+              { token: 'aUSD' as PaymentToken, label: 'aUSD', sub: 'Stablecoin' },
               { token: 'SOUL' as PaymentToken, label: '$SOUL', sub: '20% OFF' },
-              { token: 'MON' as PaymentToken, label: 'MON', sub: 'Swap & Buy' },
             ]).map(({ token, label, sub }) => (
               <button
                 key={token}
@@ -267,14 +273,19 @@ function OverviewTab({
             ))}
           </div>
           {selectedToken === 'SOUL' && (
-            <p className="text-xs text-green-400">
-              Hold $SOUL tokens to get 20% off all purchases!
-            </p>
-          )}
-          {selectedToken === 'MON' && (
-            <p className="text-xs text-astral-gray">
-              MON will be swapped to aUSD at market rate to complete purchase.
-            </p>
+            <div className="rounded-lg bg-green-400/5 border border-green-400/20 p-3">
+              <p className="text-xs text-green-400">
+                Hold $SOUL tokens to get 20% off all purchases!
+              </p>
+              {soulPrice && (
+                <p className="mt-1 text-xs text-astral-gray">
+                  1 $SOUL = {soulPrice.priceInMon.toFixed(6)} MON
+                  {getSoulTokenAmount() && (
+                    <span className="text-nebula-gray"> &middot; ~{getSoulTokenAmount()} $SOUL needed</span>
+                  )}
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}
