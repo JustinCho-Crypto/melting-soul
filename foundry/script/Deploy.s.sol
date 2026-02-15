@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../src/MockERC20.sol";
 import "../src/SoulNFT.sol";
 import "../src/SoulSale.sol";
 import "../src/Vault.sol";
@@ -13,23 +12,15 @@ contract DeployScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
 
-        // Use existing payment token if provided, otherwise deploy MockERC20
-        address paymentToken = vm.envOr("PAYMENT_TOKEN_ADDRESS", address(0));
+        address ausdToken = vm.envAddress("AUSD_TOKEN_ADDRESS");
+        address discountToken = vm.envAddress("DISCOUNT_TOKEN_ADDRESS");
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // Deploy MockERC20 if no payment token provided
-        if (paymentToken == address(0)) {
-            MockERC20 mockToken = new MockERC20();
-            paymentToken = address(mockToken);
-            console.log("=== Payment Token (MockERC20) ===");
-            console.log("MockERC20:", paymentToken);
-        }
-
         // Core contracts
         SoulNFT soulNFT = new SoulNFT();
-        Vault vault = new Vault(paymentToken);
-        SoulSale soulSale = new SoulSale(address(soulNFT), paymentToken, address(vault));
+        Vault vault = new Vault();
+        SoulSale soulSale = new SoulSale(address(soulNFT), ausdToken, discountToken, address(vault));
 
         // ERC-8004 Agent Registry
         AgentRegistry agentRegistry = new AgentRegistry();
@@ -44,6 +35,10 @@ contract DeployScript is Script {
         console.log("SoulNFT:", address(soulNFT));
         console.log("Vault:", address(vault));
         console.log("SoulSale:", address(soulSale));
+
+        console.log("=== Token Addresses ===");
+        console.log("aUSD Token:", ausdToken);
+        console.log("Discount Token:", discountToken);
 
         console.log("=== Agent & x402 ===");
         console.log("AgentRegistry:", address(agentRegistry));

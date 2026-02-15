@@ -12,3 +12,4 @@ remappings = [
 
 [rpc_endpoints]
 monad_testnet = "${RPC_URL}"
+monad_mainnet = "${MAINNET_RPC_URL}"

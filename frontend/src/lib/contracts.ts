@@ -1,7 +1,8 @@
 export const SOUL_NFT_ADDRESS = process.env.NEXT_PUBLIC_SOUL_NFT_ADDRESS as `0x${string}` | undefined
 export const SOUL_SALE_ADDRESS = process.env.NEXT_PUBLIC_SOUL_SALE_ADDRESS as `0x${string}` | undefined
 export const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined
-export const PAYMENT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS as `0x${string}` | undefined
+export const AUSD_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_AUSD_TOKEN_ADDRESS as `0x${string}` | undefined
+export const DISCOUNT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_DISCOUNT_TOKEN_ADDRESS as `0x${string}` | undefined
 export const AGENT_REGISTRY_ADDRESS = process.env.NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS as `0x${string}` | undefined
 export const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS as `0x${string}` | undefined
 
@@ -84,7 +85,28 @@ export const SOUL_SALE_ABI = [
     inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'to', type: 'address' }],
     name: 'buy',
     outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'to', type: 'address' }],
+    name: 'buyWithAusd',
+    outputs: [],
     stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'listingId', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'to', type: 'address' }],
+    name: 'buyWithDiscountToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'price', type: 'uint256' }],
+    name: 'getDiscountedPrice',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
     type: 'function',
   },
   {

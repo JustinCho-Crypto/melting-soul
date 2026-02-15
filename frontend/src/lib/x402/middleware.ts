@@ -4,8 +4,9 @@ import { PaymentRequirements } from './types'
 // Contract addresses
 const FACILITATOR_ADDRESS = process.env.NEXT_PUBLIC_FACILITATOR_ADDRESS as `0x${string}`
 const SOUL_SALE_ADDRESS = process.env.NEXT_PUBLIC_SOUL_SALE_ADDRESS as `0x${string}`
-const PAYMENT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS as `0x${string}`
-const CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || '1'
+const AUSD_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_AUSD_TOKEN_ADDRESS as `0x${string}`
+const DISCOUNT_TOKEN_ADDRESS = process.env.NEXT_PUBLIC_DISCOUNT_TOKEN_ADDRESS as `0x${string}`
+const CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || '143'
 
 /**
  * Check if request is from an AI Agent
@@ -44,7 +45,7 @@ export function extractPayment(request: NextRequest) {
 }
 
 /**
- * Create 402 Payment Required response
+ * Create 402 Payment Required response with multi-token support
  */
 export function create402Response(
   listingId: number,
@@ -57,10 +58,11 @@ export function create402Response(
   // Encode listing ID as bytes32 paymentRef
   const paymentRef = `0x${listingId.toString(16).padStart(64, '0')}` as `0x${string}`
 
+  // Primary requirements (aUSD at full price)
   const requirements: PaymentRequirements = {
     scheme: 'exact',
     network: CHAIN_ID,
-    token: PAYMENT_TOKEN_ADDRESS,
+    token: AUSD_TOKEN_ADDRESS,
     amount,
     recipient: SOUL_SALE_ADDRESS,
     facilitator: FACILITATOR_ADDRESS,
@@ -69,10 +71,30 @@ export function create402Response(
     paymentRef,
   }
 
+  // Compute discounted amount for $SOUL (20% off)
+  const discountedAmount = (BigInt(amount) * BigInt(8000) / BigInt(10000)).toString()
+
+  // Accepted tokens list
+  const acceptedTokens = [
+    {
+      token: AUSD_TOKEN_ADDRESS,
+      symbol: 'aUSD',
+      amount,
+      discount: null,
+    },
+    ...(DISCOUNT_TOKEN_ADDRESS ? [{
+      token: DISCOUNT_TOKEN_ADDRESS,
+      symbol: '$SOUL',
+      amount: discountedAmount,
+      discount: '20%',
+    }] : []),
+  ]
+
   const response = NextResponse.json(
     {
       message: 'Payment Required',
       requirements,
+      acceptedTokens,
     },
     { status: 402 }
   )
@@ -81,6 +103,7 @@ export function create402Response(
   response.headers.set('X-Payment-Required', JSON.stringify(requirements))
   response.headers.set('X-Facilitator', FACILITATOR_ADDRESS)
   response.headers.set('X-Network', CHAIN_ID)
+  response.headers.set('X-Accepted-Tokens', JSON.stringify(acceptedTokens))
 
   return response
 }
@@ -88,17 +111,6 @@ export function create402Response(
 /**
  * Detect agent and enforce x402 payment flow
  * Use this in API routes that require payment
- *
- * Example usage:
- * ```ts
- * export async function POST(request: NextRequest) {
- *   // Check if agent request needs payment
- *   const x402Check = await enforceX402(request, listingId, totalPrice, agentWallet)
- *   if (x402Check) return x402Check
- *
- *   // Continue with normal flow if payment verified
- * }
- * ```
  */
 export async function enforceX402(
   request: NextRequest,

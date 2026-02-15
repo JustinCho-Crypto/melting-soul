@@ -8,7 +8,7 @@ import "../src/Vault.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockToken is ERC20 {
-    constructor() ERC20("Mock", "MCK") {
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
         _mint(msg.sender, 1_000_000 ether);
     }
 
@@ -21,20 +21,26 @@ contract SoulMarketplaceTest is Test {
     SoulNFT public soulNFT;
     SoulSale public soulSale;
     Vault public vault;
-    MockToken public token;
+    MockToken public ausdToken;
+    MockToken public discountToken;
 
     address public deployer = address(this);
-    address public alice = address(0xA);
-    address public bob = address(0xB);
+    address public alice = makeAddr("alice");
+    address public bob = makeAddr("bob");
 
     function setUp() public {
-        token = new MockToken();
+        ausdToken = new MockToken("aUSD", "aUSD");
+        discountToken = new MockToken("SOUL", "SOUL");
         soulNFT = new SoulNFT();
-        vault = new Vault(address(token));
-        soulSale = new SoulSale(address(soulNFT), address(token), address(vault));
+        vault = new Vault();
+        soulSale = new SoulSale(address(soulNFT), address(ausdToken), address(discountToken), address(vault));
 
-        token.mint(alice, 10_000 ether);
-        token.mint(bob, 10_000 ether);
+        ausdToken.mint(alice, 10_000 ether);
+        ausdToken.mint(bob, 10_000 ether);
+        discountToken.mint(alice, 10_000 ether);
+        discountToken.mint(bob, 10_000 ether);
+        vm.deal(alice, 100 ether);
+        vm.deal(bob, 100 ether);
     }
 
     // --- SoulNFT Tests ---
@@ -123,9 +129,9 @@ contract SoulMarketplaceTest is Test {
         assertEq(lineage[1], 1);
     }
 
-    // --- SoulSale Tests ---
+    // --- SoulSale: Buy with MON (native) ---
 
-    function test_listAndBuy() public {
+    function test_buyWithMON() public {
         vm.prank(alice);
         soulNFT.createSoul("ipfs://soul1", 100);
 
@@ -133,17 +139,183 @@ contract SoulMarketplaceTest is Test {
         soulNFT.setApprovalForAll(address(soulSale), true);
 
         vm.prank(alice);
-        uint256 listingId = soulSale.list(1, 10, 1 ether);
-        assertEq(listingId, 1);
+        soulSale.list(1, 10, 1 ether);
 
         vm.prank(bob);
-        token.approve(address(soulSale), 5 ether);
-
-        vm.prank(bob);
-        soulSale.buy(1, 5, bob);
+        soulSale.buy{value: 5 ether}(1, 5, bob);
 
         assertEq(soulNFT.balanceOf(bob, 1), 5);
     }
+
+    function test_buyWithMON_revert_incorrectValue() public {
+        vm.prank(alice);
+        soulNFT.createSoul("ipfs://soul1", 100);
+
+        vm.prank(alice);
+        soulNFT.setApprovalForAll(address(soulSale), true);
+
+        vm.prank(alice);
+        soulSale.list(1, 10, 1 ether);
+
+        vm.prank(bob);
+        vm.expectRevert("Incorrect MON amount");
+        soulSale.buy{value: 3 ether}(1, 5, bob);
+    }
+
+    // --- SoulSale: Buy with aUSD (ERC20, full price) ---
+
+    function test_buyWithAusd() public {
+        vm.prank(alice);
+        soulNFT.createSoul("ipfs://soul1", 100);
+
+        vm.prank(alice);
+        soulNFT.setApprovalForAll(address(soulSale), true);
+
+        vm.prank(alice);
+        soulSale.list(1, 10, 1 ether);
+
+        vm.prank(bob);
+        ausdToken.approve(address(soulSale), 5 ether);
+
+        vm.prank(bob);
+        soulSale.buyWithAusd(1, 5, bob);
+
+        assertEq(soulNFT.balanceOf(bob, 1), 5);
+    }
+
+    // --- SoulSale: Buy with $SOUL discount token (80% price) ---
+
+    function test_buyWithDiscountToken() public {
+        vm.prank(alice);
+        soulNFT.createSoul("ipfs://soul1", 100);
+
+        vm.prank(alice);
+        soulNFT.setApprovalForAll(address(soulSale), true);
+
+        vm.prank(alice);
+        soulSale.list(1, 10, 100 ether);
+
+        // Discounted price: 100 * 80% = 80 ether per unit, 5 units = 400 ether
+        vm.prank(bob);
+        discountToken.approve(address(soulSale), 400 ether);
+
+        vm.prank(bob);
+        soulSale.buyWithDiscountToken(1, 5, bob);
+
+        assertEq(soulNFT.balanceOf(bob, 1), 5);
+    }
+
+    // --- Discount price calculation ---
+
+    function test_getDiscountedPrice() public view {
+        // 20% discount: 100 -> 80
+        assertEq(soulSale.getDiscountedPrice(100), 80);
+        assertEq(soulSale.getDiscountedPrice(1000), 800);
+        assertEq(soulSale.getDiscountedPrice(1 ether), 0.8 ether);
+    }
+
+    // --- Fee Distribution: MON gen1 (4% origin, 2.5% platform) ---
+
+    function test_feeDistribution_MON_gen1() public {
+        // Alice creates origin soul
+        vm.prank(alice);
+        soulNFT.createSoul("ipfs://origin", 100);
+
+        // Bob forks it (gen 1)
+        vm.prank(bob);
+        uint256 forkId = soulNFT.forkSoul(1, "ipfs://fork", 50);
+
+        // Bob lists fork
+        vm.prank(bob);
+        soulNFT.setApprovalForAll(address(soulSale), true);
+
+        vm.prank(bob);
+        soulSale.list(forkId, 10, 10 ether);
+
+        address charlie = makeAddr("charlie");
+        vm.deal(charlie, 100 ether);
+
+        uint256 aliceBalBefore = alice.balance;
+        uint256 vaultBalBefore = address(vault).balance;
+
+        vm.prank(charlie);
+        soulSale.buy{value: 10 ether}(1, 1, charlie);
+
+        // Alice (origin creator) gets 4% = 0.4 ether
+        assertEq(alice.balance - aliceBalBefore, 0.4 ether);
+        // Vault gets 2.5% = 0.25 ether
+        assertEq(address(vault).balance - vaultBalBefore, 0.25 ether);
+    }
+
+    // --- Fee Distribution: MON gen2 (4% origin, 3.5% parent, 2.5% platform) ---
+
+    function test_feeDistribution_MON_gen2() public {
+        // Alice creates origin soul (gen 0)
+        vm.prank(alice);
+        soulNFT.createSoul("ipfs://origin", 100);
+
+        // Bob forks it (gen 1)
+        vm.prank(bob);
+        soulNFT.forkSoul(1, "ipfs://gen1", 50);
+
+        // Charlie forks bob's (gen 2)
+        address charlie = makeAddr("charlie2");
+        vm.prank(charlie);
+        uint256 gen2Id = soulNFT.forkSoul(2, "ipfs://gen2", 25);
+
+        // Charlie lists gen2
+        vm.prank(charlie);
+        soulNFT.setApprovalForAll(address(soulSale), true);
+
+        vm.prank(charlie);
+        soulSale.list(gen2Id, 5, 100 ether);
+
+        address dave = makeAddr("dave");
+        vm.deal(dave, 200 ether);
+
+        uint256 aliceBalBefore = alice.balance;
+        uint256 bobBalBefore = bob.balance;
+        uint256 vaultBalBefore = address(vault).balance;
+        uint256 charlieBalBefore = charlie.balance;
+
+        vm.prank(dave);
+        soulSale.buy{value: 100 ether}(1, 1, dave);
+
+        // Alice (origin) gets 4% = 4 ether
+        assertEq(alice.balance - aliceBalBefore, 4 ether);
+        // Bob (parent) gets 3.5% = 3.5 ether
+        assertEq(bob.balance - bobBalBefore, 3.5 ether);
+        // Vault gets 2.5% = 2.5 ether
+        assertEq(address(vault).balance - vaultBalBefore, 2.5 ether);
+        // Charlie (seller) gets remainder: 100 - 4 - 3.5 - 2.5 = 90 ether
+        assertEq(charlie.balance - charlieBalBefore, 90 ether);
+    }
+
+    // --- Vault Tests ---
+
+    function test_vaultWithdraw() public {
+        // Send native MON to vault
+        vm.deal(address(vault), 100 ether);
+        vault.withdraw(alice, 50 ether);
+        assertEq(alice.balance, 150 ether); // alice had 100 from setUp + 50
+
+        // Send ERC20 to vault
+        ausdToken.transfer(address(vault), 100 ether);
+        vault.withdrawToken(address(ausdToken), bob, 50 ether);
+        assertEq(ausdToken.balanceOf(bob), 10_050 ether); // bob had 10_000 from setUp + 50
+    }
+
+    function test_vaultBalance() public {
+        vm.deal(address(vault), 100 ether);
+        assertEq(vault.balance(), 100 ether);
+    }
+
+    function test_vaultBalanceOf() public {
+        ausdToken.transfer(address(vault), 100 ether);
+        assertEq(vault.balanceOf(address(ausdToken)), 100 ether);
+    }
+
+    // --- Cancel Listing ---
 
     function test_cancelListing() public {
         vm.prank(alice);
@@ -161,43 +333,10 @@ contract SoulMarketplaceTest is Test {
         assertEq(soulNFT.balanceOf(alice, 1), 100);
     }
 
-    function test_feeDistribution_origin() public {
-        // Alice creates origin soul
-        vm.prank(alice);
-        soulNFT.createSoul("ipfs://origin", 100);
-
-        // Bob forks it
-        vm.prank(bob);
-        uint256 forkId = soulNFT.forkSoul(1, "ipfs://fork", 50);
-
-        // Bob lists fork
-        vm.prank(bob);
-        soulNFT.setApprovalForAll(address(soulSale), true);
-
-        vm.prank(bob);
-        soulSale.list(forkId, 10, 100 ether);
-
-        // Alice (buyer here, different from creator) buys fork
-        uint256 aliceBalBefore = token.balanceOf(alice);
-
-        vm.prank(alice);
-        token.approve(address(soulSale), 100 ether);
-
-        vm.prank(alice);
-        soulSale.buy(1, 1, alice);
-
-        // Alice (origin creator) should get 5% royalty = 5 ether
-        // But alice is also the buyer, so net = -100 + 5 = -95
-        uint256 aliceBalAfter = token.balanceOf(alice);
-        uint256 aliceSpent = aliceBalBefore - aliceBalAfter;
-        assertEq(aliceSpent, 95 ether);
-
-        // Vault gets 2.5% = 2.5 ether
-        assertEq(token.balanceOf(address(vault)), 2.5 ether);
-    }
+    // --- Buy to other address ---
 
     function test_buyToOtherAddress() public {
-        address charlie = address(0xC);
+        address charlie = makeAddr("charlie3");
 
         vm.prank(alice);
         soulNFT.createSoul("ipfs://soul1", 100);
@@ -208,28 +347,11 @@ contract SoulMarketplaceTest is Test {
         vm.prank(alice);
         soulSale.list(1, 10, 1 ether);
 
-        // Bob pays, but NFT goes to Charlie
+        // Bob pays MON, but NFT goes to Charlie
         vm.prank(bob);
-        token.approve(address(soulSale), 5 ether);
-
-        vm.prank(bob);
-        soulSale.buy(1, 5, charlie);
+        soulSale.buy{value: 5 ether}(1, 5, charlie);
 
         assertEq(soulNFT.balanceOf(charlie, 1), 5);
         assertEq(soulNFT.balanceOf(bob, 1), 0);
-    }
-
-    // --- Vault Tests ---
-
-    function test_vaultWithdraw() public {
-        token.transfer(address(vault), 100 ether);
-        vault.withdraw(alice, 50 ether);
-        assertEq(token.balanceOf(alice), 10_050 ether);
-        assertEq(token.balanceOf(address(vault)), 50 ether);
-    }
-
-    function test_vaultBalance() public {
-        token.transfer(address(vault), 100 ether);
-        assertEq(vault.balance(), 100 ether);
     }
 }

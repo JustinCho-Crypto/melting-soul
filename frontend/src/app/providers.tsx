@@ -6,21 +6,21 @@ import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit'
 import '@rainbow-me/rainbowkit/styles.css'
 import { type Chain } from 'viem'
 
-const monadTestnet = {
-  id: 10143,
-  name: 'Monad Testnet',
+const monadMainnet = {
+  id: 143,
+  name: 'Monad',
   nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
   rpcUrls: {
-    default: { http: ['https://testnet-rpc.monad.xyz'] }
+    default: { http: ['https://rpc.monad.xyz'] }
   }
 } as const satisfies Chain
 
 const config = getDefaultConfig({
   appName: 'Melting Soul',
   projectId: 'melting-soul-dev',
-  chains: [monadTestnet],
+  chains: [monadMainnet],
   transports: {
-    [monadTestnet.id]: http()
+    [monadMainnet.id]: http()
   },
   ssr: true,
 })

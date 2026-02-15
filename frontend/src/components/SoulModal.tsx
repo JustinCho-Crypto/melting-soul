@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { useBuySoul } from '@/hooks/useContracts'
+import { useBuyWithMon, useBuyWithAusd, useBuyWithSoul, useApproveToken } from '@/hooks/useContracts'
 import { useListingBySoul } from '@/hooks/useListings'
 import { shortenAddress, formatPrice } from '@/lib/utils'
 import { GenBadge } from '@/components/GenBadge'
 import { PersonalityTraits } from '@/components/PersonalityTraits'
 import { LineageTree } from '@/components/LineageTree'
 import { MOCK_SOUL_STATS, MOCK_ACTIVITY } from '@/lib/mockData'
+import { SOUL_SALE_ADDRESS, AUSD_TOKEN_ADDRESS, DISCOUNT_TOKEN_ADDRESS } from '@/lib/contracts'
 import type { Soul } from '@/lib/supabase'
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 type Tab = 'overview' | 'lineage' | 'activity'
+type PaymentToken = 'MON' | 'aUSD' | 'SOUL'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'overview', label: 'Overview' },
@@ -46,17 +48,10 @@ const EVENT_ICONS: Record<string, string> = {
 export function SoulModal({ soul, onClose, onFork }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const { address } = useAccount()
-  const { buy, isLoading } = useBuySoul()
   const { data: listing } = useListingBySoul(soul.id)
 
   const stats = MOCK_SOUL_STATS.find((s) => s.id === soul.id)
   const activities = MOCK_ACTIVITY.filter((a) => a.soul_id === soul.id)
-
-  const handleBuy = async () => {
-    if (!listing) return
-    await buy(listing.listing_id, 1)
-    onClose()
-  }
 
   return (
     <div
@@ -103,9 +98,8 @@ export function SoulModal({ soul, onClose, onFork }: Props) {
               soul={soul}
               listing={listing}
               stats={stats}
-              isLoading={isLoading}
               address={address}
-              onBuy={handleBuy}
+              onClose={onClose}
               onFork={onFork}
             />
           )}
@@ -131,19 +125,55 @@ function OverviewTab({
   soul,
   listing,
   stats,
-  isLoading,
   address,
-  onBuy,
+  onClose,
   onFork,
 }: {
   soul: Soul
   listing: ReturnType<typeof useListingBySoul>['data']
   stats: (typeof MOCK_SOUL_STATS)[number] | undefined
-  isLoading: boolean
   address: string | undefined
-  onBuy: () => void
+  onClose: () => void
   onFork: () => void
 }) {
+  const [selectedToken, setSelectedToken] = useState<PaymentToken>('MON')
+
+  const buyMon = useBuyWithMon()
+  const buyAusd = useBuyWithAusd()
+  const buySoul = useBuyWithSoul()
+  const { approve, isLoading: isApproving } = useApproveToken()
+
+  const isLoading = buyMon.isLoading || buyAusd.isLoading || buySoul.isLoading || isApproving
+
+  const getDisplayPrice = () => {
+    if (!listing) return '-'
+    const price = formatPrice(listing.price)
+    if (selectedToken === 'SOUL') {
+      const discounted = (Number(price) * 0.8).toFixed(4)
+      return `${discounted} $SOUL`
+    }
+    return `${price} ${selectedToken}`
+  }
+
+  const handleBuy = async () => {
+    if (!listing || !SOUL_SALE_ADDRESS) return
+
+    if (selectedToken === 'MON') {
+      await buyMon.buy(listing.listing_id, 1, BigInt(listing.price))
+    } else if (selectedToken === 'aUSD') {
+      if (!AUSD_TOKEN_ADDRESS) return
+      await approve(AUSD_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, BigInt(listing.price))
+      await buyAusd.buy(listing.listing_id, 1)
+    } else if (selectedToken === 'SOUL') {
+      if (!DISCOUNT_TOKEN_ADDRESS) return
+      const discountedPrice = BigInt(listing.price) * BigInt(8000) / BigInt(10000)
+      await approve(DISCOUNT_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, discountedPrice)
+      await buySoul.buy(listing.listing_id, 1)
+    }
+
+    onClose()
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header: Avatar + Info */}
@@ -205,16 +235,43 @@ function OverviewTab({
         </div>
       </div>
 
+      {/* Token Selection */}
+      {listing && (
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-medium text-nebula-gray">Pay with</span>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { token: 'MON' as PaymentToken, label: 'MON', sub: 'Native' },
+              { token: 'aUSD' as PaymentToken, label: 'aUSD', sub: 'Stablecoin' },
+              { token: 'SOUL' as PaymentToken, label: '$SOUL', sub: '20% OFF' },
+            ]).map(({ token, label, sub }) => (
+              <button
+                key={token}
+                onClick={() => setSelectedToken(token)}
+                className={`flex flex-col items-center gap-0.5 rounded-lg border p-3 transition-all ${
+                  selectedToken === token
+                    ? 'border-soul-purple bg-soul-purple/10 text-ghost-white'
+                    : 'border-astral-border bg-void-surface text-nebula-gray hover:border-soul-purple/50'
+                }`}
+              >
+                <span className="text-sm font-semibold">{label}</span>
+                <span className={`text-xs ${token === 'SOUL' ? 'text-green-400' : 'text-astral-gray'}`}>{sub}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-3">
           {listing && (
             <button
-              onClick={onBuy}
+              onClick={handleBuy}
               disabled={isLoading || !address}
               className="flex-1 rounded-lg gradient-button py-3 font-semibold text-ghost-white shadow-[0_4px_14px_rgba(168,85,247,0.4)] transition-all hover:shadow-[0_4px_20px_rgba(168,85,247,0.6)] active:scale-[0.98] disabled:opacity-50"
             >
-              {isLoading ? 'Processing...' : `Buy · ${formatPrice(listing.price)} MON`}
+              {isLoading ? 'Processing...' : `Buy · ${getDisplayPrice()}`}
             </button>
           )}
           <button
@@ -226,7 +283,7 @@ function OverviewTab({
           </button>
         </div>
         <p className="text-center text-xs text-nebula-gray">
-          2.5% fee on all purchases &middot; Royalties flow to origin creator
+          2.5% platform fee &middot; 4% origin royalty &middot; 3.5% parent royalty
         </p>
       </div>
     </div>
