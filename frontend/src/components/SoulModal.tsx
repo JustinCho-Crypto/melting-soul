@@ -150,10 +150,10 @@ function OverviewTab({
 
   const getDisplayPrice = () => {
     if (!onChainListing) return '-'
-    const price = formatPrice(onChainListing.pricePerUnit.toString())
+    const price = formatPrice(onChainListing.pricePerUnit.toString(), 6)
     if (selectedToken === 'SOUL') {
       const discountedWei = onChainListing.pricePerUnit * BigInt(8000) / BigInt(10000)
-      return `${formatPrice(discountedWei.toString())} $SOUL`
+      return `${formatPrice(discountedWei.toString(), 6)} $SOUL`
     }
     return `${price} aUSD`
   }
@@ -161,7 +161,7 @@ function OverviewTab({
   const getSoulTokenAmount = () => {
     if (!onChainListing || !soulPrice) return null
     // Convert wei (6 decimals) to human-readable, then apply 20% discount
-    const priceHuman = Number(onChainListing.pricePerUnit) / 1e18
+    const priceHuman = Number(onChainListing.pricePerUnit) / 1e6
     const discountedAusd = priceHuman * 0.8
     const soulTokens = discountedAusd / soulPrice.priceInMon
     return soulTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })
@@ -231,7 +231,7 @@ function OverviewTab({
           { label: 'Forked', value: stats?.fork_count ?? 0 },
           { label: 'Sold', value: stats?.sale_count ?? 0 },
           { label: 'Lineage', value: `Gen ${soul.generation}` },
-          { label: 'Price', value: onChainListing ? `${formatPrice(onChainListing.pricePerUnit.toString())} aUSD` : '-' },
+          { label: 'Price', value: onChainListing ? `${formatPrice(onChainListing.pricePerUnit.toString(), 6)} aUSD` : '-' },
         ].map((stat) => (
           <div key={stat.label} className="flex flex-col items-center gap-1 rounded-lg bg-void-surface p-3">
             <span className="text-lg font-bold text-ghost-white">{stat.value}</span>

@@ -49,10 +49,10 @@ export function SoulTable() {
                 </div>
               </td>
               <td className="px-4 py-4 text-right text-white">
-                {soul.floor_price ? `${formatPrice(soul.floor_price)} TOKEN` : '-'}
+                {soul.floor_price ? `${formatPrice(soul.floor_price, 6)} aUSD` : '-'}
               </td>
               <td className="px-4 py-4 text-right text-white">
-                {formatPrice(soul.total_volume)} TOKEN
+                {formatPrice(soul.total_volume, 6)} aUSD
               </td>
               <td className="px-4 py-4 text-right text-white/70">{soul.fork_count}</td>
               <td className="px-4 py-4 text-right text-white/70">{soul.sale_count}</td>

@@ -6,7 +6,7 @@ export function shortenAddress(address: string): string {
 import { formatUnits } from 'viem'
 
 /** Format a wei-denominated price to human-readable string */
-export function formatPrice(price: string | number, decimals = 18): string {
+export function formatPrice(price: string | number, decimals = 6): string {
   const formatted = formatUnits(BigInt(price), decimals)
   const num = Number(formatted)
   if (num === 0) return '0'
