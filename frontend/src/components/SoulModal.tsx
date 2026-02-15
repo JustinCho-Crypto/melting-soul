@@ -153,7 +153,7 @@ function OverviewTab({
     const price = formatPrice(onChainListing.pricePerUnit.toString())
     if (selectedToken === 'SOUL') {
       const discountedWei = onChainListing.pricePerUnit * BigInt(8000) / BigInt(10000)
-      return `${formatPrice(discountedWei.toString())} aUSD`
+      return `${formatPrice(discountedWei.toString())} $SOUL`
     }
     return `${price} aUSD`
   }
@@ -161,7 +161,7 @@ function OverviewTab({
   const getSoulTokenAmount = () => {
     if (!onChainListing || !soulPrice) return null
     // Convert wei (6 decimals) to human-readable, then apply 20% discount
-    const priceHuman = Number(onChainListing.pricePerUnit) / 1e6
+    const priceHuman = Number(onChainListing.pricePerUnit) / 1e18
     const discountedAusd = priceHuman * 0.8
     const soulTokens = discountedAusd / soulPrice.priceInMon
     return soulTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })

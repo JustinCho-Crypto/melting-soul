@@ -6,12 +6,11 @@ export function shortenAddress(address: string): string {
 import { formatUnits } from 'viem'
 
 /** Format a wei-denominated price to human-readable string */
-export function formatPrice(price: string | number, decimals = 6): string {
+export function formatPrice(price: string | number, decimals = 18): string {
   const formatted = formatUnits(BigInt(price), decimals)
-  // Drop unnecessary trailing zeros but keep at least 2 decimal places for display
   const num = Number(formatted)
   if (num === 0) return '0'
   return num % 1 === 0
     ? num.toLocaleString()
-    : num.toLocaleString(undefined, { maximumFractionDigits: decimals })
+    : num.toLocaleString(undefined, { maximumFractionDigits: 4 })
 }
