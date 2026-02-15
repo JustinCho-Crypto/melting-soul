@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useAccount } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useSouls } from '@/hooks/useSouls'
+import { useAllSouls, useOwnedSouls } from '@/hooks/useSouls'
 import { SoulCard } from '@/components/SoulCard'
 import { SoulModal } from '@/components/SoulModal'
 import { ForkModal } from '@/components/ForkModal'
@@ -12,16 +12,14 @@ import type { Soul } from '@/lib/types'
 
 export default function MySoulsPage() {
   const { address, isConnected } = useAccount()
-  const { data: allSouls, isLoading } = useSouls()
+  const { data: allSouls, isLoading: isSoulsLoading } = useAllSouls()
+  const { data: ownedSouls, isLoading: isBalanceLoading } = useOwnedSouls(allSouls, address)
+
+  const isLoading = isSoulsLoading || isBalanceLoading
 
   const [selectedSoul, setSelectedSoul] = useState<Soul | null>(null)
   const [forkTarget, setForkTarget] = useState<Soul | null>(null)
   const [lookupAddress, setLookupAddress] = useState('')
-
-  // TODO: Filter by actual on-chain balance instead of creator_address
-  const ownedSouls = allSouls?.filter(
-    (s) => address && s.creator_address.toLowerCase() === address.toLowerCase()
-  )
 
   const createdSouls = allSouls?.filter(
     (s) => address && s.creator_address.toLowerCase() === address.toLowerCase() && s.generation > 0

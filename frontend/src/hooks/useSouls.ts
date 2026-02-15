@@ -1,6 +1,10 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useReadContracts } from 'wagmi'
 import { isSupabaseConfigured } from '@/lib/config'
 import { MOCK_SOULS, MOCK_SOUL_STATS } from '@/lib/mockData'
+import { SOUL_NFT_ADDRESS, SOUL_NFT_ABI } from '@/lib/contracts'
+import type { Soul } from '@/lib/types'
 
 export function useSouls() {
   return useQuery({
@@ -56,4 +60,32 @@ export function useSoulStats() {
       return data
     },
   })
+}
+
+/** Check on-chain balanceOf for every soul and return only those the user owns */
+export function useOwnedSouls(souls: Soul[] | undefined, address: string | undefined) {
+  const contracts = useMemo(() => {
+    if (!souls || !address || !SOUL_NFT_ADDRESS) return []
+    return souls.map((s) => ({
+      address: SOUL_NFT_ADDRESS,
+      abi: SOUL_NFT_ABI,
+      functionName: 'balanceOf' as const,
+      args: [address as `0x${string}`, BigInt(s.token_id)],
+    }))
+  }, [souls, address])
+
+  const { data: balances, isLoading } = useReadContracts({
+    contracts,
+    query: { enabled: contracts.length > 0 },
+  })
+
+  const owned = useMemo(() => {
+    if (!souls || !balances) return []
+    return souls.filter((_, i) => {
+      const result = balances[i]
+      return result?.status === 'success' && (result.result as bigint) > BigInt(0)
+    })
+  }, [souls, balances])
+
+  return { data: owned, isLoading }
 }
