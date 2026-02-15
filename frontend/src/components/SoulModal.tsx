@@ -136,7 +136,7 @@ function OverviewTab({
   onClose: () => void
   onFork: () => void
 }) {
-  const [selectedToken, setSelectedToken] = useState<PaymentToken>('MON')
+  const [selectedToken, setSelectedToken] = useState<PaymentToken>('aUSD')
 
   const buyMon = useBuyWithMon()
   const buyAusd = useBuyWithAusd()
@@ -149,10 +149,17 @@ function OverviewTab({
     if (!listing) return '-'
     const price = formatPrice(listing.price)
     if (selectedToken === 'SOUL') {
-      const discounted = (Number(price) * 0.8).toFixed(4)
-      return `${discounted} $SOUL`
+      const discounted = (Number(listing.price) * 0.8).toFixed(0)
+      return `${formatPrice(discounted)} aUSD`
     }
-    return `${price} ${selectedToken}`
+    return `${price} aUSD`
+  }
+
+  const getBuyLabel = () => {
+    if (isLoading) return 'Processing...'
+    if (selectedToken === 'MON') return `Swap MON & Buy \u00b7 ${getDisplayPrice()}`
+    if (selectedToken === 'SOUL') return `Buy \u00b7 ${getDisplayPrice()} (20% OFF)`
+    return `Buy \u00b7 ${getDisplayPrice()}`
   }
 
   const handleBuy = async () => {
@@ -206,7 +213,7 @@ function OverviewTab({
           { label: 'Forked', value: stats?.fork_count ?? 0 },
           { label: 'Sold', value: stats?.sale_count ?? 0 },
           { label: 'Lineage', value: `Gen ${soul.generation}` },
-          { label: 'Price', value: listing ? `${formatPrice(listing.price)} MON` : '-' },
+          { label: 'Price', value: listing ? `${formatPrice(listing.price)} aUSD` : '-' },
         ].map((stat) => (
           <div key={stat.label} className="flex flex-col items-center gap-1 rounded-lg bg-void-surface p-3">
             <span className="text-lg font-bold text-ghost-white">{stat.value}</span>
@@ -241,9 +248,9 @@ function OverviewTab({
           <span className="text-sm font-medium text-nebula-gray">Pay with</span>
           <div className="grid grid-cols-3 gap-2">
             {([
-              { token: 'MON' as PaymentToken, label: 'MON', sub: 'Native' },
-              { token: 'aUSD' as PaymentToken, label: 'aUSD', sub: 'Stablecoin' },
+              { token: 'aUSD' as PaymentToken, label: 'aUSD', sub: 'Direct' },
               { token: 'SOUL' as PaymentToken, label: '$SOUL', sub: '20% OFF' },
+              { token: 'MON' as PaymentToken, label: 'MON', sub: 'Swap & Buy' },
             ]).map(({ token, label, sub }) => (
               <button
                 key={token}
@@ -259,6 +266,16 @@ function OverviewTab({
               </button>
             ))}
           </div>
+          {selectedToken === 'SOUL' && (
+            <p className="text-xs text-green-400">
+              Hold $SOUL tokens to get 20% off all purchases!
+            </p>
+          )}
+          {selectedToken === 'MON' && (
+            <p className="text-xs text-astral-gray">
+              MON will be swapped to aUSD at market rate to complete purchase.
+            </p>
+          )}
         </div>
       )}
 
@@ -271,7 +288,7 @@ function OverviewTab({
               disabled={isLoading || !address}
               className="flex-1 rounded-lg gradient-button py-3 font-semibold text-ghost-white shadow-[0_4px_14px_rgba(168,85,247,0.4)] transition-all hover:shadow-[0_4px_20px_rgba(168,85,247,0.6)] active:scale-[0.98] disabled:opacity-50"
             >
-              {isLoading ? 'Processing...' : `Buy · ${getDisplayPrice()}`}
+              {getBuyLabel()}
             </button>
           )}
           <button
