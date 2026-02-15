@@ -314,6 +314,13 @@ function OverviewTab({
             Fork
           </button>
         </div>
+        <a
+          href={`/api/souls/${soul.token_id}?format=txt`}
+          download
+          className="rounded-lg border border-astral-border py-2.5 text-center text-sm font-medium text-nebula-gray transition-all hover:border-ghost-white hover:text-ghost-white active:scale-[0.98]"
+        >
+          Export soul.txt
+        </a>
         <p className="text-center text-xs text-nebula-gray">
           2.5% platform fee &middot; 4% origin royalty &middot; 3.5% parent royalty
         </p>
