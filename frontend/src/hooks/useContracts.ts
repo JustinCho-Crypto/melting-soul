@@ -102,7 +102,7 @@ export function useCreateSoul() {
 
 export function useForkSoul() {
   const { writeContract, data: hash, isPending } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { isLoading: isConfirming, data: receipt } = useWaitForTransactionReceipt({ hash })
 
   const fork = async (parentTokenId: number, metadataUri: string, initialSupply: number) => {
     if (!SOUL_NFT_ADDRESS) return
@@ -114,7 +114,7 @@ export function useForkSoul() {
     })
   }
 
-  return { fork, isLoading: isPending || isConfirming, hash }
+  return { fork, isLoading: isPending || isConfirming, hash, receipt }
 }
 
 export function useListSoul() {

@@ -10,7 +10,7 @@ import { PersonalityTraits } from '@/components/PersonalityTraits'
 import { LineageTree } from '@/components/LineageTree'
 import { MOCK_SOUL_STATS, MOCK_ACTIVITY } from '@/lib/mockData'
 import { SOUL_SALE_ADDRESS, AUSD_TOKEN_ADDRESS, DISCOUNT_TOKEN_ADDRESS } from '@/lib/contracts'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 interface Props {
   soul: Soul
