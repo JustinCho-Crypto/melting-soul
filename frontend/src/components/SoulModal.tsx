@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { parseUnits } from 'viem'
 import { useBuyWithAusd, useBuyWithSoul, useApproveToken } from '@/hooks/useContracts'
 import { useSoulTokenPrice } from '@/hooks/useSoulPrice'
 import { useListingBySoul } from '@/hooks/useListings'
@@ -151,17 +150,17 @@ function OverviewTab({
     if (!listing) return '-'
     const price = formatPrice(listing.price)
     if (selectedToken === 'SOUL') {
-      const discounted = (Number(listing.price) * 0.8).toFixed(0)
-      return `${formatPrice(discounted)} aUSD`
+      const discountedWei = BigInt(listing.price) * BigInt(8000) / BigInt(10000)
+      return `${formatPrice(discountedWei.toString())} aUSD`
     }
     return `${price} aUSD`
   }
 
   const getSoulTokenAmount = () => {
     if (!listing || !soulPrice) return null
-    const discountedAusd = Number(listing.price) * 0.8
-    // $SOUL price in MON from NadFun Lens; 1 aUSD ~ 1 USD
-    // Estimate: discountedAusd / soulPriceInMon gives rough $SOUL tokens needed
+    // Convert wei (6 decimals) to human-readable, then apply 20% discount
+    const priceHuman = Number(listing.price) / 1e6
+    const discountedAusd = priceHuman * 0.8
     const soulTokens = discountedAusd / soulPrice.priceInMon
     return soulTokens.toLocaleString(undefined, { maximumFractionDigits: 0 })
   }
@@ -175,21 +174,27 @@ function OverviewTab({
   const handleBuy = async () => {
     if (!listing || !SOUL_SALE_ADDRESS) return
 
-    // Convert human-readable price (e.g. "50") to wei (50 * 10^18)
-    const priceWei = parseUnits(String(listing.price), 18)
+    try {
+      // listing.price is already in wei from on-chain
+      const priceWei = BigInt(listing.price)
 
-    if (selectedToken === 'aUSD') {
-      if (!AUSD_TOKEN_ADDRESS) return
-      await approve(AUSD_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, priceWei)
-      await buyAusd.buy(listing.listing_id, 1)
-    } else if (selectedToken === 'SOUL') {
-      if (!DISCOUNT_TOKEN_ADDRESS) return
-      const discountedPrice = priceWei * BigInt(8000) / BigInt(10000)
-      await approve(DISCOUNT_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, discountedPrice)
-      await buySoul.buy(listing.listing_id, 1)
+      if (selectedToken === 'aUSD') {
+        if (!AUSD_TOKEN_ADDRESS) return
+        // 1) Approve — waits for on-chain confirmation
+        await approve(AUSD_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, priceWei)
+        // 2) Buy — only fires after approve is confirmed
+        await buyAusd.buy(listing.listing_id, 1)
+      } else if (selectedToken === 'SOUL') {
+        if (!DISCOUNT_TOKEN_ADDRESS) return
+        const discountedPrice = priceWei * BigInt(8000) / BigInt(10000)
+        await approve(DISCOUNT_TOKEN_ADDRESS, SOUL_SALE_ADDRESS, discountedPrice)
+        await buySoul.buy(listing.listing_id, 1)
+      }
+
+      onClose()
+    } catch (err) {
+      console.error('Buy failed:', err)
     }
-
-    onClose()
   }
 
   return (
