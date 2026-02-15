@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { useAllSouls } from '@/hooks/useSouls'
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 
 interface LineageGroup {
   origin: Soul

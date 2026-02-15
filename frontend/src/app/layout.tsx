@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: "Soul Marketplace",
   description: "Pump.fun for AI Personalities — Buy, Fork & Evolve AI Agent Souls",

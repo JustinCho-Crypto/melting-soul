@@ -1,6 +1,6 @@
 'use client'
 
-import type { Soul } from '@/lib/supabase'
+import type { Soul } from '@/lib/types'
 import { GenBadge } from '@/components/GenBadge'
 
 interface Props {

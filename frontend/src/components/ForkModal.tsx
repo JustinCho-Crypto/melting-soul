@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAccount } from 'wagmi'
 import { useForkSoul } from '@/hooks/useContracts'
-import type { Soul } from '@/lib/supabase'
+import { syncSoulFromReceipt, type SoulSyncMeta } from '@/lib/syncSupabase'
+import type { Soul } from '@/lib/types'
 
 interface Props {
   parentSoul: Soul
@@ -12,19 +13,41 @@ interface Props {
 
 export function ForkModal({ parentSoul, onClose }: Props) {
   const { address } = useAccount()
-  const { fork, isLoading } = useForkSoul()
+  const { fork, isLoading, receipt } = useForkSoul()
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [additionalPrompt, setAdditionalPrompt] = useState('')
   const [forkNote, setForkNote] = useState('')
   const [initialSupply, setInitialSupply] = useState(10)
+  const synced = useRef(false)
+
+  useEffect(() => {
+    if (receipt?.status === 'success' && !synced.current && address) {
+      synced.current = true
+      const meta: SoulSyncMeta = {
+        name,
+        description,
+        image_url: parentSoul.image_url,
+        conversation_style: parentSoul.conversation_style,
+        knowledge_domain: parentSoul.knowledge_domain,
+        behavior_traits: parentSoul.behavior_traits,
+        temperature: parentSoul.temperature,
+        parent_id: parentSoul.id,
+        fork_note: forkNote || undefined,
+        additional_prompt: additionalPrompt || undefined,
+      }
+      syncSoulFromReceipt(receipt.logs, meta, address).then(() => {
+        onClose()
+      })
+    }
+  }, [receipt, address, name, description, forkNote, additionalPrompt, parentSoul, onClose])
 
   const handleFork = async () => {
     if (!name || !address) return
+    synced.current = false
     const metadataUri = `ipfs://fork-${parentSoul.token_id}-${Date.now()}`
-    await fork(parentSoul.token_id, metadataUri, initialSupply)
-    onClose()
+    fork(parentSoul.token_id, metadataUri, initialSupply)
   }
 
   return (

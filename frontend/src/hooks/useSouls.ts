@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/config'
 import { MOCK_SOULS, MOCK_SOUL_STATS } from '@/lib/mockData'
 
 export function useSouls() {
@@ -9,7 +9,8 @@ export function useSouls() {
       if (!isSupabaseConfigured) {
         return MOCK_SOULS.filter((s) => s.generation === 0)
       }
-      const { data, error } = await supabase
+      const { getSupabase } = await import('@/lib/supabase')
+      const { data, error } = await getSupabase()
         .from('souls')
         .select('id, token_id, name, description, image_url, conversation_style, knowledge_domain, generation, creator_address, created_at')
         .eq('generation', 0)
@@ -27,7 +28,8 @@ export function useAllSouls() {
       if (!isSupabaseConfigured) {
         return MOCK_SOULS
       }
-      const { data, error } = await supabase
+      const { getSupabase } = await import('@/lib/supabase')
+      const { data, error } = await getSupabase()
         .from('souls')
         .select('id, token_id, name, description, image_url, conversation_style, knowledge_domain, behavior_traits, temperature, parent_id, generation, fork_note, creator_address, created_at')
         .order('created_at', { ascending: false })
@@ -44,7 +46,8 @@ export function useSoulStats() {
       if (!isSupabaseConfigured) {
         return MOCK_SOUL_STATS
       }
-      const { data, error } = await supabase
+      const { getSupabase } = await import('@/lib/supabase')
+      const { data, error } = await getSupabase()
         .from('soul_stats')
         .select('*')
         .order('total_volume', { ascending: false })

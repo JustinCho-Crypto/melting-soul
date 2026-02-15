@@ -1,4 +1,4 @@
-import { Soul, Listing } from './supabase'
+import { Soul, Listing } from './types'
 
 export const MOCK_SOULS: Soul[] = [
   {

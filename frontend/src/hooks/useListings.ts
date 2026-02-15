@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/config'
 import { MOCK_LISTINGS } from '@/lib/mockData'
 
 export function useListings() {
@@ -9,7 +9,8 @@ export function useListings() {
       if (!isSupabaseConfigured) {
         return MOCK_LISTINGS.filter((l) => l.is_active)
       }
-      const { data, error } = await supabase
+      const { getSupabase } = await import('@/lib/supabase')
+      const { data, error } = await getSupabase()
         .from('listings')
         .select('*')
         .eq('is_active', true)
@@ -27,7 +28,8 @@ export function useListingBySoul(soulId: string | undefined) {
       if (!isSupabaseConfigured) {
         return MOCK_LISTINGS.find((l) => l.soul_id === soulId && l.is_active) ?? null
       }
-      const { data, error } = await supabase
+      const { getSupabase } = await import('@/lib/supabase')
+      const { data, error } = await getSupabase()
         .from('listings')
         .select('*')
         .eq('soul_id', soulId!)

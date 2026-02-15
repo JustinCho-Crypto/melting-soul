@@ -116,7 +116,8 @@ export async function enforceX402(
   request: NextRequest,
   listingId: number,
   amount: string,
-  agentWallet?: `0x${string}`
+  agentWallet?: `0x${string}`,
+  options?: { purchaseAmount?: string; recipient?: string }
 ): Promise<NextResponse | null> {
   // Only apply to agent requests
   if (!isAgentRequest(request)) {
@@ -173,6 +174,8 @@ export async function enforceX402(
           action: 'settle',
           payload: payment.payload,
           signature: payment.signature,
+          purchaseAmount: options?.purchaseAmount || '1',
+          recipient: options?.recipient || payment.payload.from,
         }),
       }
     )
